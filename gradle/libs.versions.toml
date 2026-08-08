@@ -55,6 +55,9 @@ turbine = "1.1.0"
 mockk = "1.13.13"
 androidxTestExtJunit = "1.2.1"
 androidxTestEspresso = "3.6.1"
+# Supplies an Android Context on the JVM so in-memory Room DAO tests run inside
+# `gradlew build` instead of requiring a connected device.
+robolectric = "4.14.1"
 
 [libraries]
 # --- AndroidX core ---------------------------------------------------------
@@ -133,6 +136,7 @@ mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 mockk-android = { group = "io.mockk", name = "mockk-android", version.ref = "mockk" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestExtJunit" }
 androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "androidxTestEspresso" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 
 # --- Gradle plugin artifacts, consumed by build-logic convention plugins ----
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }

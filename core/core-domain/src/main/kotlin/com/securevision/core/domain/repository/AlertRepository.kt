@@ -24,6 +24,16 @@ interface AlertRepository {
      */
     fun getByType(type: AlertType): Flow<List<AlertRecord>>
 
+    /**
+     * The most recent alerts, newest first.
+     *
+     * Bounded at the query rather than by taking from [getAll], so the dashboard
+     * preview does not grow into a full table read as history accumulates.
+     *
+     * @param limit Maximum number of alerts to emit.
+     */
+    fun getRecent(limit: Int): Flow<List<AlertRecord>>
+
     /** Live count of unread alerts, for the navigation badge. */
     fun getUnreadCount(): Flow<Int>
 

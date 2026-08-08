@@ -14,14 +14,15 @@ dependencies {
     // module except :app, which binds the implementations into the Hilt graph.
     implementation(projects.core.coreDomain)
 
+    implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.datastore.preferences)
+
+    // Robolectric supplies an Android Context on the JVM, so the in-memory Room
+    // DAO test runs inside `gradlew build` rather than needing a connected device.
+    testImplementation(libs.robolectric)
 }
 
 /*
- * Phase 2 fills this module in: Room entities, DAOs and the database; the
- * DataStore-backed settings source; and the on-device file store for enrolment
- * photos, snapshots and recordings.
- *
  * Phase 3 adds the Firebase Auth and Firestore sources for the app-login account
  * — the only data in the project that leaves the device.
  */

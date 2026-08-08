@@ -21,6 +21,15 @@ interface EnrolledProfileRepository {
     fun getAll(): Flow<List<EnrolledProfile>>
 
     /**
+     * Live count of enrolled profiles.
+     *
+     * Separate from [getAll] because the dashboard only needs the number:
+     * counting by loading the list would read a 512-float embedding per person
+     * just to call `size`.
+     */
+    fun countAll(): Flow<Int>
+
+    /**
      * Looks up a single profile.
      *
      * @param id The profile identifier.

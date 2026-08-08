@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- System status card -->
+    <string name="dashboard_status_title">System Standby</string>
+    <string name="dashboard_status_subtitle">Monitoring is idle. Open Live View to start detection.</string>
+
+    <!-- Stat cards -->
+    <string name="dashboard_stat_alerts">Unread alerts</string>
+    <string name="dashboard_stat_profiles">Enrolled profiles</string>
+    <string name="dashboard_stat_events">Detections logged</string>
+
+    <!-- Quick actions -->
+    <string name="dashboard_quick_actions">Quick actions</string>
+    <string name="dashboard_action_live">Live</string>
+    <string name="dashboard_action_alerts">Alerts</string>
+    <string name="dashboard_action_profiles">Profiles</string>
+    <string name="dashboard_action_settings">Settings</string>
+
+    <!-- Recent alerts -->
+    <string name="dashboard_recent_alerts">Recent alerts</string>
+    <string name="dashboard_recent_alerts_empty_title">Nothing detected yet</string>
+    <string name="dashboard_recent_alerts_empty_subtitle">Alerts appear here as soon as Live View sees a face, a weapon or movement.</string>
+
+    <!-- Primary action -->
+    <string name="dashboard_open_live_view">Open Live View</string>
+
+    <!-- Error -->
+    <string name="dashboard_error_title">Could not read local data</string>
+    <string name="dashboard_error_subtitle">The on-device database did not respond. Reopening the screen usually clears this.</string>
+
+    <!-- Alert row -->
+    <string name="dashboard_alert_type_known_person">Known person</string>
+    <string name="dashboard_alert_type_unknown_person">Unknown person</string>
+    <string name="dashboard_alert_type_weapon">Weapon detected</string>
+    <string name="dashboard_alert_type_motion">Motion detected</string>
+
+    <!-- Confidence, e.g. "87% confidence" -->
+    <string name="dashboard_alert_confidence">%1$d%% confidence</string>
+
+</resources>

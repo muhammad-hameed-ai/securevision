@@ -1,6 +1,7 @@
 package com.securevision.core.domain.repository
 
 import com.securevision.core.model.AppSettings
+import com.securevision.core.model.CameraResolution
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -16,33 +17,53 @@ interface SettingsRepository {
     /** Current settings, re-emitted on every change. */
     val settingsFlow: Flow<AppSettings>
 
-    /** @param enabled Whether an unrecognised face sounds the alarm. */
-    suspend fun updateAlarmOnUnknownFace(enabled: Boolean)
-
-    /** @param enabled Whether a weapon detection sounds the critical alarm. */
-    suspend fun updateAlarmOnWeapon(enabled: Boolean)
-
-    /** @param enabled Whether movement in a static scene raises an alert. */
-    suspend fun updateMotionDetectionEnabled(enabled: Boolean)
+    // --- Recognition tuning --------------------------------------------------
 
     /** @param threshold Minimum cosine similarity for a face match, in `0f..1f`. */
-    suspend fun updateFaceMatchThreshold(threshold: Float)
+    suspend fun updateConfidenceThreshold(threshold: Float)
 
     /** @param margin Minimum lead the best match must hold over the runner-up. */
-    suspend fun updateFaceMatchMargin(margin: Float)
+    suspend fun updateMatchMargin(margin: Float)
 
     /** @param frames Consecutive agreeing frames required to commit an identity. */
-    suspend fun updateVotingFrameCount(frames: Int)
+    suspend fun updateVoteFrames(frames: Int)
 
-    /** @param enabled Whether the live screen records video with overlays. */
-    suspend fun updateRecordingEnabled(enabled: Boolean)
+    // --- Detector switches ---------------------------------------------------
 
-    /** @param enabled Master switch for system notifications. */
-    suspend fun updateNotificationsEnabled(enabled: Boolean)
+    /** @param enabled Detect and recognise faces. */
+    suspend fun updateFaceDetectionEnabled(enabled: Boolean)
+
+    /** @param enabled Detect people and general objects. */
+    suspend fun updateObjectDetectionEnabled(enabled: Boolean)
+
+    /** @param enabled Detect weapons and raise a critical alarm. */
+    suspend fun updateWeaponDetectionEnabled(enabled: Boolean)
+
+    /** @param enabled Alert on movement in a static scene. */
+    suspend fun updateMotionDetectionEnabled(enabled: Boolean)
+
+    /** @param enabled Infer age, gender and emotion in addition to beard and mask. */
+    suspend fun updateAttributeAnalysisEnabled(enabled: Boolean)
+
+    // --- Alerting ------------------------------------------------------------
+
+    /** @param enabled Play the alarm sound on qualifying alerts. */
+    suspend fun updateAlertSoundEnabled(enabled: Boolean)
+
+    /** @param enabled Vibrate on qualifying alerts. */
+    suspend fun updateVibrationEnabled(enabled: Boolean)
+
+    /** @param enabled Post system notifications. */
+    suspend fun updatePushNotificationsEnabled(enabled: Boolean)
+
+    // --- Capture and housekeeping -------------------------------------------
+
+    /** @param resolution Capture resolution for the live camera. */
+    suspend fun updateCameraResolution(resolution: CameraResolution)
 
     /** @param days How long alerts and events are retained before pruning. */
-    suspend fun updateRetentionDays(days: Int)
+    suspend fun updateDataRetentionDays(days: Int)
 
-    /** @param useDarkTheme `null` follows the system setting. */
-    suspend fun updateUseDarkTheme(useDarkTheme: Boolean?)
+    /** @param enabled Use the dark theme. */
+    suspend fun updateDarkMode(enabled: Boolean)
 }

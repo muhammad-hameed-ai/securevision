@@ -34,10 +34,6 @@
         Create an account with a username, full name, password and CNIC.
         Built in Phase 3.
     </string>
-    <string name="placeholder_dashboard">
-        Detection counts, unread alerts and recent activity appear here.
-        Built in Phase 2.
-    </string>
     <string name="placeholder_live">
         Real-time camera with face, weapon and motion detection drawn over the
         preview. Built in Phase 4.

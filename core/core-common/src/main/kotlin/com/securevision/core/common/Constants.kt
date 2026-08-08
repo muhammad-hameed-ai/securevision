@@ -15,13 +15,28 @@ object Constants {
         const val SETTINGS_DATASTORE_NAME = "securevision_settings"
 
         /** Internal-storage directory holding enrolment photos. */
-        const val PROFILE_PHOTO_DIRECTORY = "enrolled_profiles"
+        const val PROFILE_PHOTO_DIRECTORY = "profiles"
 
         /** Internal-storage directory holding alert snapshots. */
         const val SNAPSHOT_DIRECTORY = "snapshots"
 
         /** Internal-storage directory holding recorded video. */
         const val RECORDING_DIRECTORY = "recordings"
+
+        /**
+         * JPEG quality for snapshots and enrolment photos.
+         *
+         * High rather than maximum: an enrolment photo is re-encoded once and then
+         * only ever displayed, because recognition runs against the stored
+         * embedding, never against the saved image.
+         */
+        const val JPEG_QUALITY = 90
+
+        /** Extension used for stills written by [PROFILE_PHOTO_DIRECTORY] and [SNAPSHOT_DIRECTORY]. */
+        const val IMAGE_EXTENSION = "jpg"
+
+        /** Extension used for clips written to [RECORDING_DIRECTORY]. */
+        const val VIDEO_EXTENSION = "mp4"
     }
 
     /** Notification channel identifiers, one per alert class. */

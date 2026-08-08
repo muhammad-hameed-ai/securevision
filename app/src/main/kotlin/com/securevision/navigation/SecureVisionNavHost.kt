@@ -1,7 +1,6 @@
 package com.securevision.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.NotificationsActive
@@ -16,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.securevision.R
+import com.securevision.feature.dashboard.navigation.dashboardScreen
 import com.securevision.ui.PlaceholderScreen
 
 /**
@@ -58,13 +58,15 @@ fun SecureVisionNavHost(
             )
         }
 
-        composable(SecureVisionRoute.Dashboard.route) {
-            PlaceholderScreen(
-                icon = Icons.Outlined.Dashboard,
-                title = stringResource(R.string.destination_dashboard),
-                description = stringResource(R.string.placeholder_dashboard),
-            )
-        }
+        // The first real screen. Its route and graph entry are owned by
+        // :feature:feature-dashboard, so :app composes the feature rather than
+        // knowing how it is built.
+        dashboardScreen(
+            onNavigateToLive = { navState.navigateToTopLevel(TopLevelDestination.LIVE) },
+            onNavigateToAlerts = { navState.navigateToTopLevel(TopLevelDestination.ALERTS) },
+            onNavigateToProfiles = { navState.navigateToTopLevel(TopLevelDestination.PROFILES) },
+            onNavigateToSettings = { navState.navigateToTopLevel(TopLevelDestination.SETTINGS) },
+        )
 
         composable(SecureVisionRoute.Live.route) {
             PlaceholderScreen(

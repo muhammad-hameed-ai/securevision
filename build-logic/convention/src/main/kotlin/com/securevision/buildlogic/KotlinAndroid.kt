@@ -48,6 +48,15 @@ internal fun Project.configureKotlinAndroid(commonExtension: CommonExtension<*, 
                 )
             }
         }
+
+        testOptions {
+            unitTests {
+                // Robolectric needs merged Android resources and a manifest to build
+                // its Context. Harmless for modules that do not use it.
+                isIncludeAndroidResources = true
+                isReturnDefaultValues = true
+            }
+        }
     }
 
     configureKotlinCompiler()
