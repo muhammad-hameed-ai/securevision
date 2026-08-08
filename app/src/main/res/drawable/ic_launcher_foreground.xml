@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SecureVision mark: a cyan shield holding a watching eye.
+  Authored at the 108dp adaptive-icon size with the subject inside the central
+  72dp safe zone, so no mask crops it.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Shield -->
+    <path
+        android:fillColor="#00C9A7"
+        android:pathData="M54,26 L76,35 L76,54 C76,68.5 66.5,79.5 54,84 C41.5,79.5 32,68.5 32,54 L32,35 Z" />
+
+    <!-- Eye aperture -->
+    <path
+        android:fillColor="#0A1628"
+        android:pathData="M54,47 C61,47 66.5,52 68,55 C66.5,58 61,63 54,63 C47,63 41.5,58 40,55 C41.5,52 47,47 54,47 Z" />
+
+    <!-- Pupil -->
+    <path
+        android:fillColor="#00C9A7"
+        android:pathData="M49,55 A5,5 0 1,0 59,55 A5,5 0 1,0 49,55 Z" />
+
+</vector>

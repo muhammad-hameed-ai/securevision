@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The platform theme applied before the first Compose frame. Its only job is to
+  paint the cold-start window in the app's own navy so launch does not flash
+  white. Every subsequent pixel is drawn by SecureVisionTheme in core-ui.
+-->
+<resources>
+
+    <style name="Theme.SecureVision" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/sv_navy_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+</resources>

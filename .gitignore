@@ -1,0 +1,37 @@
+# --- Gradle ---------------------------------------------------------------
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle-wrapper.properties
+local.properties
+
+# --- Android --------------------------------------------------------------
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+bin/
+gen/
+out/
+release/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# --- Signing & secrets ----------------------------------------------------
+# Never commit: these grant publishing or backend access.
+*.keystore
+*.jks
+keystore.properties
+google-services.json
+
+# --- IDE ------------------------------------------------------------------
+.idea/
+*.iml
+.kotlin/
+.DS_Store
+
+# --- On-device ML models --------------------------------------------------
+# Large binaries are distributed out-of-band, not through git.
+*.tflite.bak

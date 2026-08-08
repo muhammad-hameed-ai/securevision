@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Strings owned by the design system. Screen copy lives in the feature module
+  that owns the screen; only text baked into a reusable component belongs here.
+-->
+<resources>
+
+    <!-- Content description for the back arrow in the app bar. -->
+    <string name="sv_content_description_back">Navigate up</string>
+
+    <!-- Content description for the spinner shown inside a button that is working. -->
+    <string name="sv_content_description_loading">Working</string>
+
+    <!-- Content description for the control that reveals a masked password. -->
+    <string name="sv_content_description_show_password">Show password</string>
+
+    <!-- Content description for the control that masks a revealed password. -->
+    <string name="sv_content_description_hide_password">Hide password</string>
+
+    <!-- Alert severity labels, shown on the severity badge. -->
+    <string name="sv_severity_low">Low</string>
+    <string name="sv_severity_medium">Medium</string>
+    <string name="sv_severity_high">High</string>
+    <string name="sv_severity_critical">Critical</string>
+
+</resources>

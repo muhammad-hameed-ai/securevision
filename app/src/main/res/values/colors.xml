@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Only the colours the platform needs before Compose is running: the launcher
+  icon background and the window background painted during cold start.
+  Everything the UI draws comes from the Compose theme in core-ui.
+-->
+<resources>
+    <color name="sv_navy_background">#0A1628</color>
+    <color name="ic_launcher_background">#0A1628</color>
+</resources>
