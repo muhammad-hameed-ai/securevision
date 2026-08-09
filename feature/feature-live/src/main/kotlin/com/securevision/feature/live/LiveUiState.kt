@@ -3,27 +3,33 @@ package com.securevision.feature.live
 import androidx.compose.runtime.Immutable
 import com.securevision.core.domain.engine.EngineStatus
 import com.securevision.core.model.DetectionResult
+import com.securevision.core.model.MotionResult
+import com.securevision.core.model.WeaponDetection
 
 /**
  * Everything the live screen renders.
  *
- * [Ready] deliberately carries [engineStatus] rather than a plain boolean: the
- * screen has to distinguish "no model installed" from "the model emits a
- * different dimension than your enrolments" — the same red banner for both would
- * hide the fact that one is fixed by adding a file and the other by re-enrolling.
+ * Engine statuses are carried separately per detector, because they fail
+ * independently and their fixes differ: a missing face model needs a file, a
+ * dimension mismatch needs re-enrolment, and a missing weapon model needs a
+ * different file entirely. One combined "degraded" flag would hide which.
  */
 @Immutable
 sealed interface LiveUiState {
 
-    /** Camera and model are still starting. */
+    /** Camera and models are still starting. */
     data object Loading : LiveUiState
 
     /**
      * The camera is running.
      *
      * @property detections Faces in the most recent analysed frame.
+     * @property weapons Weapons in the most recent frame that ran weapon detection.
+     * @property motion Latest frame-to-frame comparison.
      * @property stats Counts for this session.
-     * @property engineStatus Whether recognition is available, and on what.
+     * @property faceEngineStatus Whether face recognition is available.
+     * @property weaponEngineStatus Whether weapon detection is available.
+     * @property attributesEnabled Whether attribute analysis is switched on.
      * @property analysisWidth Width of the upright analysis frame, for the overlay.
      * @property analysisHeight Height of the upright analysis frame, for the overlay.
      * @property isFrontCamera Which camera is active; the overlay mirrors for it.
@@ -33,8 +39,12 @@ sealed interface LiveUiState {
     @Immutable
     data class Ready(
         val detections: List<DetectionResult> = emptyList(),
+        val weapons: List<WeaponDetection> = emptyList(),
+        val motion: MotionResult = MotionResult.NONE,
         val stats: SessionStats = SessionStats(),
-        val engineStatus: EngineStatus = EngineStatus.Initialising,
+        val faceEngineStatus: EngineStatus = EngineStatus.Initialising,
+        val weaponEngineStatus: EngineStatus = EngineStatus.Initialising,
+        val attributesEnabled: Boolean = false,
         val analysisWidth: Int = 0,
         val analysisHeight: Int = 0,
         val isFrontCamera: Boolean = false,
@@ -42,8 +52,11 @@ sealed interface LiveUiState {
         val isEnrolling: Boolean = false,
     ) : LiveUiState {
 
-        /** Whether faces can actually be recognised, as opposed to merely detected. */
-        val isRecognitionActive: Boolean get() = engineStatus is EngineStatus.Ready
+        /** Whether faces can be recognised, as opposed to merely detected. */
+        val isRecognitionActive: Boolean get() = faceEngineStatus is EngineStatus.Ready
+
+        /** Whether weapons can be detected at all. */
+        val isWeaponDetectionActive: Boolean get() = weaponEngineStatus is EngineStatus.Ready
 
         /** Whether the overlay has enough frame geometry to project boxes. */
         val canProjectOverlay: Boolean get() = analysisWidth > 0 && analysisHeight > 0
@@ -58,18 +71,22 @@ sealed interface LiveUiState {
 }
 
 /**
- * Counts for the current session, reset when the screen is left.
+ * Counts for the current session, reset when the camera flips or the screen is left.
  *
- * Counted per tracking id rather than per frame: one person standing in view for
- * a minute is one sighting, not two hundred.
+ * Faces are counted per tracking id rather than per frame: one person standing in
+ * view for a minute is one sighting, not two hundred. Weapons have no tracking id,
+ * so they are counted per confirmed alert, which the de-duplication guard already
+ * bounds.
  *
  * @property total Distinct faces seen.
  * @property known Distinct faces recognised as an enrolled person.
  * @property unknown Distinct faces confirmed as matching nobody.
+ * @property weapons Weapon alerts raised.
  */
 @Immutable
 data class SessionStats(
     val total: Int = 0,
     val known: Int = 0,
     val unknown: Int = 0,
+    val weapons: Int = 0,
 )

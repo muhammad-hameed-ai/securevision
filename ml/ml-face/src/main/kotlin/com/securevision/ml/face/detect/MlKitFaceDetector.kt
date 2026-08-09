@@ -38,9 +38,10 @@ class MlKitFaceDetector @Inject constructor() {
             FaceDetectorOptions.Builder()
                 .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
                 .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
-                // Classification stays off until Phase 5 needs beard and mask; it
-                // costs work per face that nothing currently reads.
-                .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_NONE)
+                // Enabled for the coarse emotion signal. ML Kit computes the smile
+                // score during detection, so this is the one attribute available
+                // without a separate model — and without a second inference pass.
+                .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
                 .setMinFaceSize(MIN_RELATIVE_FACE_SIZE)
                 .enableTracking()
                 .build(),
@@ -88,6 +89,9 @@ class MlKitFaceDetector @Inject constructor() {
             landmarks = extractLandmarks(width, height),
             yawDegrees = headEulerAngleY,
             rollDegrees = headEulerAngleZ,
+            // Null when the detector declined on this face. Passed through as null
+            // rather than defaulted, so "not assessed" survives to the alert.
+            smilingProbability = smilingProbability,
         )
     }
 

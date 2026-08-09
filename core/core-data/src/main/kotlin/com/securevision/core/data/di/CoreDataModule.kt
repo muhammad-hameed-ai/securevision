@@ -7,7 +7,9 @@ import com.securevision.core.data.repository.EnrolledProfileRepositoryImpl
 import com.securevision.core.data.repository.RecordingRepositoryImpl
 import com.securevision.core.data.repository.SettingsRepositoryImpl
 import com.securevision.core.data.storage.ProfilePhotoStoreImpl
+import com.securevision.core.data.storage.SnapshotStoreImpl
 import com.securevision.core.domain.engine.ProfilePhotoStore
+import com.securevision.core.domain.engine.SnapshotStore
 import com.securevision.core.domain.repository.AlertRepository
 import com.securevision.core.domain.repository.AuthRepository
 import com.securevision.core.domain.repository.DetectionEventRepository
@@ -77,4 +79,16 @@ abstract class CoreDataModule {
     abstract fun bindProfilePhotoStore(
         implementation: ProfilePhotoStoreImpl,
     ): ProfilePhotoStore
+
+    /**
+     * Separate from the profile photo store despite both writing images: an
+     * enrolment photo is reference data for the life of a profile, while a
+     * snapshot is evidence subject to the retention policy. One shared contract
+     * would eventually mean a retention sweep deleting enrolment photos.
+     */
+    @Binds
+    @Singleton
+    abstract fun bindSnapshotStore(
+        implementation: SnapshotStoreImpl,
+    ): SnapshotStore
 }

@@ -39,6 +39,7 @@ import com.securevision.feature.live.camera.CameraPermissionGate
 import com.securevision.feature.live.camera.CameraPreview
 import com.securevision.feature.live.component.EnrolFaceDialog
 import com.securevision.feature.live.component.LiveHud
+import com.securevision.feature.live.component.MotionIndicator
 import com.securevision.feature.live.component.SessionStatsBar
 import com.securevision.feature.live.overlay.DetectionOverlay
 import com.securevision.feature.live.overlay.OverlayTransform
@@ -129,6 +130,7 @@ private fun ReadyContent(
         if (state.canProjectOverlay && viewSize.width > 0) {
             DetectionOverlay(
                 detections = state.detections,
+                weapons = state.weapons,
                 transform = OverlayTransform(
                     analysisWidth = state.analysisWidth,
                     analysisHeight = state.analysisHeight,
@@ -144,6 +146,13 @@ private fun ReadyContent(
 
             StatusBanner(state = state)
         }
+
+        MotionIndicator(
+            motion = state.motion,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(SecureVisionDimens.spacingMedium),
+        )
 
         Column(
             modifier = Modifier.align(Alignment.BottomCenter),
@@ -181,15 +190,50 @@ private fun ReadyContent(
 }
 
 /**
- * Explains why recognition is not running, when it is not.
+ * Explains which detectors are not running, and why.
  *
- * Three distinct messages rather than one, because the fixes are different:
- * install a model, investigate a load failure, or re-enrol profiles created with
- * a different model.
+ * Face and weapon are reported on their own lines rather than merged into one
+ * "degraded" warning: they fail independently and the remedies differ — install a
+ * face model, install a weapon model, or re-enrol profiles created with a
+ * different model. A single line would leave the operator guessing which.
  */
 @Composable
 private fun StatusBanner(state: LiveUiState.Ready) {
-    val message = when (val status = state.engineStatus) {
+    val messages = listOfNotNull(
+        faceStatusMessage(state),
+        weaponStatusMessage(state.weaponEngineStatus),
+    )
+    if (messages.isEmpty()) return
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(SecureVisionTheme.colors.weaponContainer)
+            .padding(SecureVisionDimens.spacingMediumSmall),
+        horizontalArrangement = Arrangement.spacedBy(SecureVisionDimens.spacingSmall),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.WarningAmber,
+            contentDescription = null,
+            modifier = Modifier.size(SecureVisionDimens.iconSmall),
+            tint = SecureVisionTheme.colors.onWeaponContainer,
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(SecureVisionDimens.spacingExtraSmall)) {
+            messages.forEach { message ->
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = SecureVisionTheme.colors.onWeaponContainer,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun faceStatusMessage(state: LiveUiState.Ready): String? =
+    when (val status = state.faceEngineStatus) {
         is EngineStatus.RecognitionUnavailable -> when (status.reason) {
             EngineStatus.RecognitionUnavailable.Reason.MODEL_NOT_INSTALLED ->
                 stringResource(R.string.live_recognition_missing_model)
@@ -206,28 +250,21 @@ private fun StatusBanner(state: LiveUiState.Ready) {
         }
 
         EngineStatus.Initialising -> null
-    } ?: return
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(SecureVisionTheme.colors.weaponContainer)
-            .padding(SecureVisionDimens.spacingMediumSmall),
-        horizontalArrangement = Arrangement.spacedBy(SecureVisionDimens.spacingSmall),
-        verticalAlignment = Alignment.Top,
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.WarningAmber,
-            contentDescription = null,
-            modifier = Modifier.size(SecureVisionDimens.iconSmall),
-            tint = SecureVisionTheme.colors.onWeaponContainer,
-        )
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodySmall,
-            color = SecureVisionTheme.colors.onWeaponContainer,
-        )
     }
+
+@Composable
+private fun weaponStatusMessage(status: EngineStatus): String? = when (status) {
+    is EngineStatus.RecognitionUnavailable -> when (status.reason) {
+        EngineStatus.RecognitionUnavailable.Reason.MODEL_NOT_INSTALLED ->
+            stringResource(R.string.live_weapon_missing_model)
+        // A weapon model that fails to load and one whose shapes are wrong are
+        // the same problem to the operator: the file is not usable, replace it.
+        EngineStatus.RecognitionUnavailable.Reason.MODEL_LOAD_FAILED,
+        EngineStatus.RecognitionUnavailable.Reason.EMBEDDING_DIMENSION_MISMATCH,
+        -> stringResource(R.string.live_weapon_load_failed)
+    }
+
+    is EngineStatus.Ready, EngineStatus.Initialising -> null
 }
 
 @Composable

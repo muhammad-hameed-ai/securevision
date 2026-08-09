@@ -43,13 +43,18 @@ interface FaceRecognitionEngine {
      * @param profiles Enrolled profiles to match against. Pass an empty list and
      *   every face resolves to [com.securevision.core.model.MatchStatus.UNKNOWN].
      * @param settings Supplies the match threshold, margin and vote count.
-     * @return One result per detected face that passed the quality gate.
+     * @param retainAlignedCrops Whether to carry each face's aligned crop out in
+     *   [RecognisedFace.alignedCrop], so attribute analysis can reuse it rather
+     *   than re-detecting. Off by default: the crops are only worth allocating
+     *   when something downstream will actually read them.
+     * @return One entry per detected face that passed the quality gate.
      */
     suspend fun recognise(
         frame: FaceFrame,
         profiles: List<EnrolledProfile>,
         settings: AppSettings,
-    ): List<DetectionResult>
+        retainAlignedCrops: Boolean = false,
+    ): List<RecognisedFace>
 
     /**
      * Produces an embedding for the single most prominent face in a frame, for

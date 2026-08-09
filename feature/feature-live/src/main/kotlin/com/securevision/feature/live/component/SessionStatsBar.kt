@@ -21,7 +21,7 @@ import com.securevision.feature.live.R
 import com.securevision.feature.live.SessionStats
 
 /**
- * The bottom strip: how many faces this session has seen, and how they resolved.
+ * The bottom strip: what this session has seen, and how it resolved.
  *
  * @param stats Counts for the current session.
  * @param modifier Modifier applied to the bar.
@@ -55,6 +55,17 @@ fun SessionStatsBar(
             value = stats.unknown,
             label = stringResource(R.string.live_stat_unknown),
             colour = SecureVisionTheme.colors.unknown,
+        )
+        StatColumn(
+            value = stats.weapons,
+            label = stringResource(R.string.live_stat_weapons),
+            // Left in the muted colour at zero: a permanently orange counter reads
+            // as an active warning and would dull the one that matters.
+            colour = if (stats.weapons > 0) {
+                SecureVisionTheme.colors.weapon
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
         )
     }
 }

@@ -15,6 +15,12 @@
     <string name="live_stat_total">Total</string>
     <string name="live_stat_known">Known</string>
     <string name="live_stat_unknown">Unknown</string>
+    <string name="live_stat_weapons">Weapons</string>
+
+    <!-- Motion indicator -->
+    <string name="live_motion_label">Motion</string>
+    <string name="live_motion_detected">Motion detected in view</string>
+    <string name="live_motion_still">Scene is still</string>
 
     <!-- Recognition status banners -->
     <string name="live_recognition_offline_title">Recognition offline</string>
@@ -22,6 +28,8 @@
     <string name="live_recognition_load_failed">The face model could not be loaded. Faces are still detected but not identified.</string>
     <string name="live_recognition_dimension_mismatch">Your enrolled profiles were created with a different face model, so they cannot be compared. Delete and re-enrol them to restore recognition.</string>
     <string name="live_no_profiles">No one is enrolled yet, so every face reads as unknown. Use Enrol face to add someone.</string>
+    <string name="live_weapon_missing_model">No weapon model is installed, so weapons are not detected. Add weapon_detector.tflite to the app assets to enable detection.</string>
+    <string name="live_weapon_load_failed">The weapon model could not be loaded, so weapons are not detected.</string>
 
     <!-- Enrolment, temporary for Phase 4 -->
     <string name="live_enrol_action">Enrol face</string>

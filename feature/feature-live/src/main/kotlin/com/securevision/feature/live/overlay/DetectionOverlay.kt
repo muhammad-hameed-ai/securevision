@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.securevision.core.model.DetectionResult
 import com.securevision.core.model.MatchStatus
+import com.securevision.core.model.WeaponDetection
 import com.securevision.core.ui.theme.SecureVisionTheme
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -37,6 +38,7 @@ import kotlin.math.roundToInt
 @Composable
 fun DetectionOverlay(
     detections: List<DetectionResult>,
+    weapons: List<WeaponDetection>,
     transform: OverlayTransform,
     modifier: Modifier = Modifier,
 ) {
@@ -45,6 +47,7 @@ fun DetectionOverlay(
     val density = LocalDensity.current
 
     val strokeWidth = with(density) { STROKE_WIDTH.toPx() }
+    val weaponStrokeWidth = with(density) { WEAPON_STROKE_WIDTH.toPx() }
     val cornerLength = with(density) { CORNER_LENGTH.toPx() }
     val labelOffset = with(density) { LABEL_OFFSET.toPx() }
 
@@ -66,15 +69,46 @@ fun DetectionOverlay(
             )
 
             drawLabel(
-                detection = detection,
+                text = detection.label(),
                 rect = rect,
                 colour = colour,
                 textMeasurer = textMeasurer,
                 labelOffset = labelOffset,
             )
         }
+
+        // Weapons are drawn last so they sit above any face box they overlap, and
+        // with a heavier stroke: if both are on screen, the weapon is the thing
+        // the operator must see first.
+        weapons.forEach { weapon ->
+            val rect = transform.project(weapon.boundingBox)
+
+            drawCornerBrackets(
+                rect = rect,
+                colour = palette.weapon,
+                strokeWidth = weaponStrokeWidth,
+                cornerLength = cornerLength,
+            )
+
+            drawLabel(
+                text = weapon.label(),
+                rect = rect,
+                colour = palette.weapon,
+                textMeasurer = textMeasurer,
+                labelOffset = labelOffset,
+            )
+        }
     }
 }
+
+private fun DetectionResult.label(): String = when (matchStatus) {
+    MatchStatus.KNOWN -> "${profileName.orEmpty()}  ${(confidence * PERCENT).roundToInt()}%"
+    MatchStatus.UNKNOWN -> UNKNOWN_LABEL
+    MatchStatus.PROCESSING -> PROCESSING_LABEL
+}
+
+private fun WeaponDetection.label(): String =
+    "${weaponType.uppercase()}  ${(confidence * PERCENT).roundToInt()}%"
 
 /**
  * Draws four corner brackets rather than a closed rectangle.
@@ -120,21 +154,12 @@ private fun DrawScope.drawCornerBrackets(
 }
 
 private fun DrawScope.drawLabel(
-    detection: DetectionResult,
+    text: String,
     rect: ViewRect,
     colour: Color,
     textMeasurer: TextMeasurer,
     labelOffset: Float,
 ) {
-    val text = when (detection.matchStatus) {
-        MatchStatus.KNOWN -> {
-            val percent = (detection.confidence * PERCENT).roundToInt()
-            "${detection.profileName.orEmpty()}  $percent%"
-        }
-        MatchStatus.UNKNOWN -> UNKNOWN_LABEL
-        MatchStatus.PROCESSING -> PROCESSING_LABEL
-    }
-
     val measured = textMeasurer.measure(
         text = text,
         style = TextStyle(color = colour, fontSize = LABEL_SIZE),
@@ -161,6 +186,10 @@ private fun DrawScope.drawLabel(
 }
 
 private val STROKE_WIDTH = 3.dp
+
+/** Heavier than a face box, so a weapon reads first when both are on screen. */
+private val WEAPON_STROKE_WIDTH = 5.dp
+
 private val CORNER_LENGTH = 22.dp
 private val LABEL_OFFSET = 6.dp
 private val LABEL_SIZE = 14.sp

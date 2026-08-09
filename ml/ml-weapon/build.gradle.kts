@@ -5,6 +5,14 @@ plugins {
 
 android {
     namespace = "com.securevision.ml.weapon"
+
+    /*
+     * Declared for intent; the setting that actually governs APK packaging is the
+     * identical one in the application convention plugin.
+     */
+    androidResources {
+        noCompress += "tflite"
+    }
 }
 
 dependencies {

@@ -7,6 +7,7 @@ import com.securevision.core.domain.engine.EngineStatus
 import com.securevision.core.domain.engine.EnrolmentCapture
 import com.securevision.core.domain.engine.FaceFrame
 import com.securevision.core.domain.engine.FaceRecognitionEngine
+import com.securevision.core.domain.engine.RecognisedFace
 import com.securevision.core.model.AppSettings
 import com.securevision.core.model.DetectionResult
 import com.securevision.core.model.EnrolledProfile
@@ -78,14 +79,15 @@ class FaceRecognitionEngineImpl @Inject constructor(
         frame: FaceFrame,
         profiles: List<EnrolledProfile>,
         settings: AppSettings,
-    ): List<DetectionResult> = withContext(dispatcherProvider.default) {
+        retainAlignedCrops: Boolean,
+    ): List<RecognisedFace> = withContext(dispatcherProvider.default) {
         // Stage 1 — detect.
         val detections = detector.detect(frame.bitmap)
 
         voter.retainOnly(detections.map { it.trackingId }.toSet())
 
         detections.map { detection ->
-            resolve(detection, frame.bitmap, profiles, settings)
+            resolve(detection, frame.bitmap, profiles, settings, retainAlignedCrops)
         }
     }
 
@@ -156,29 +158,35 @@ class FaceRecognitionEngineImpl @Inject constructor(
         frame: Bitmap,
         profiles: List<EnrolledProfile>,
         settings: AppSettings,
-    ): DetectionResult {
+        retainAlignedCrops: Boolean,
+    ): RecognisedFace {
+        fun unresolved() = detection.toRecognised(
+            status = MatchStatus.PROCESSING,
+            profile = null,
+            confidence = 0f,
+            alignedCrop = null,
+        )
+
         // Stage 2 — quality gate. A rejected face is still drawn, so the operator
         // can see it was noticed, but it never reaches the embedder.
-        if (qualityGate.assess(detection) is FaceQuality.Rejected) {
-            return detection.toResult(MatchStatus.PROCESSING, profile = null, confidence = 0f)
-        }
+        if (qualityGate.assess(detection) is FaceQuality.Rejected) return unresolved()
 
-        val landmarks = detection.landmarks
-            ?: return detection.toResult(MatchStatus.PROCESSING, profile = null, confidence = 0f)
+        val landmarks = detection.landmarks ?: return unresolved()
 
-        if (!embedder.isReady) {
-            // Recognition is off. Report PROCESSING rather than UNKNOWN so the UI
-            // never claims a stranger it has not actually assessed.
-            return detection.toResult(MatchStatus.PROCESSING, profile = null, confidence = 0f)
-        }
+        // Recognition is off. Report PROCESSING rather than UNKNOWN so the UI
+        // never claims a stranger it has not actually assessed.
+        if (!embedder.isReady) return unresolved()
 
         // Stage 3 — ALIGN. Mandatory, and the only route to stage 4.
-        val aligned = aligner.align(frame, landmarks)
-            ?: return detection.toResult(MatchStatus.PROCESSING, profile = null, confidence = 0f)
+        val aligned = aligner.align(frame, landmarks) ?: return unresolved()
+
+        // Carried out only on request. Attribute analysis reuses this exact crop
+        // rather than re-detecting, which would cost a second detector pass and
+        // could align marginally differently from the one that was recognised.
+        val retainedCrop = aligned.takeIf { retainAlignedCrops }
 
         // Stage 4 — embed.
-        val embedding = embedder.embed(aligned)
-            ?: return detection.toResult(MatchStatus.PROCESSING, profile = null, confidence = 0f)
+        val embedding = embedder.embed(aligned) ?: return unresolved()
 
         // Stage 5 — match.
         val outcome = matcher.findBestMatch(
@@ -202,29 +210,43 @@ class FaceRecognitionEngineImpl @Inject constructor(
         )
 
         return when (vote) {
-            is VoteResult.Known -> detection.toResult(
+            is VoteResult.Known -> detection.toRecognised(
                 status = MatchStatus.KNOWN,
                 profile = profiles.firstOrNull { it.id == vote.profileId },
                 confidence = score,
+                alignedCrop = retainedCrop,
             )
-            is VoteResult.Unknown ->
-                detection.toResult(MatchStatus.UNKNOWN, profile = null, confidence = score)
-            VoteResult.Undecided ->
-                detection.toResult(MatchStatus.PROCESSING, profile = null, confidence = score)
+            is VoteResult.Unknown -> detection.toRecognised(
+                status = MatchStatus.UNKNOWN,
+                profile = null,
+                confidence = score,
+                alignedCrop = retainedCrop,
+            )
+            VoteResult.Undecided -> detection.toRecognised(
+                status = MatchStatus.PROCESSING,
+                profile = null,
+                confidence = score,
+                alignedCrop = retainedCrop,
+            )
         }
     }
 
-    private fun FaceDetection.toResult(
+    private fun FaceDetection.toRecognised(
         status: MatchStatus,
         profile: EnrolledProfile?,
         confidence: Float,
-    ) = DetectionResult(
-        trackingId = trackingId,
-        boundingBox = boundingBox,
-        matchStatus = status,
-        profileId = profile?.id,
-        profileName = profile?.name,
-        confidence = confidence,
+        alignedCrop: Bitmap?,
+    ) = RecognisedFace(
+        detection = DetectionResult(
+            trackingId = trackingId,
+            boundingBox = boundingBox,
+            matchStatus = status,
+            profileId = profile?.id,
+            profileName = profile?.name,
+            confidence = confidence,
+        ),
+        alignedCrop = alignedCrop,
+        smilingProbability = smilingProbability,
     )
 
     private companion object {

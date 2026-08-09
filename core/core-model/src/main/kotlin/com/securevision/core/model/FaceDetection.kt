@@ -18,6 +18,9 @@ import kotlin.math.abs
  * @property yawDegrees Head rotation left/right. Positive turns the face toward
  *   the image's right.
  * @property rollDegrees Head tilt. Positive tilts the face clockwise in-image.
+ * @property smilingProbability Detector's smile score in `0f..1f`, or `null` when
+ *   classification was off or the detector declined. Feeds the coarse emotion
+ *   signal; `null` means not assessed, never "not smiling".
  */
 data class FaceDetection(
     val trackingId: Int,
@@ -25,6 +28,7 @@ data class FaceDetection(
     val landmarks: FaceLandmarks?,
     val yawDegrees: Float,
     val rollDegrees: Float,
+    val smilingProbability: Float? = null,
 ) {
     /** Absolute yaw, which is what the quality gate actually thresholds on. */
     val absoluteYaw: Float get() = abs(yawDegrees)

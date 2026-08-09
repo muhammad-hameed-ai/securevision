@@ -4,10 +4,13 @@ An Android security monitoring app with **on-device AI**. Live camera detection 
 people, faces, weapons and motion, with recognition of enrolled individuals — all
 inference runs on the phone.
 
-> **Status: Phase 4 of 7 complete.** Live camera face recognition is working on
+> **Status: Phase 5a of 7 complete.** Live camera face recognition works on
 > hardware: an enrolled face draws a green box with a name and score, an
-> unenrolled one draws red. Weapons, motion, attributes, recording and the
-> remaining galleries are Phases 5–7.
+> unenrolled one draws red. Motion detection, the attribute framework and coarse
+> emotion are live; weapon detection is built and wired but inert until a
+> `weapon_detector.tflite` is dropped into the app assets, which it reports
+> honestly rather than failing silently. Alarms and notifications are Phase 5b;
+> recording and the remaining galleries are Phases 6–7.
 
 ---
 
@@ -62,6 +65,7 @@ writes a deliberately illegal import and asserts it fails:
 | `feature` cannot reach `core-data` | `import …core.data.database.SecureVisionDatabase` | Unresolved |
 | `feature-auth` cannot reach the hasher | `import …core.data.security.PasswordHasher` | Unresolved |
 | `feature-live` cannot reach the embedder | `import …ml.face.embed.FaceEmbedder` | Unresolved |
+| `feature-live` cannot reach the weapon detector | `import …ml.weapon.WeaponDetector` | Unresolved |
 
 `core-model` uses the `securevision.jvm.library` plugin — no Android Gradle Plugin
 at all — so its purity is a compiler guarantee rather than a review convention.
@@ -207,7 +211,8 @@ operator's account and every enrolled profile, none of which exists anywhere els
 | 2 | Room, DataStore, file storage, live Dashboard | ✅ |
 | 3 | Offline BCrypt auth, recovery code, session, My Account | ✅ |
 | 4 | CameraX live view; detection, alignment, recognition, overlays, quick enrol | ✅ |
-| 5 | Weapon, motion and attribute detection; alarms and notifications | |
+| 5a | Motion, attribute framework, coarse emotion, snapshots, weapon scaffolding | ✅ |
+| 5b | Alarm engine and notifications | |
 | 6 | Recording with overlays; alerts, history and recordings galleries | |
 | 7 | Settings, retention, polish | |
 

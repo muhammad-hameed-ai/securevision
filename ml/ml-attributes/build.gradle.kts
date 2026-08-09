@@ -5,13 +5,16 @@ plugins {
 
 android {
     namespace = "com.securevision.ml.attributes"
+
+    androidResources {
+        noCompress += "tflite"
+    }
 }
 
 dependencies {
     implementation(projects.core.coreDomain)
 
-    // Reuses the aligned crop and landmarks produced by :ml:ml-face rather than
-    // re-detecting, so attribute inference costs one extra pass, not two.
-    implementation(libs.mlkit.face.detection)
+    // Operates on the aligned crop the recognition pipeline already produced, so
+    // this module needs no detector of its own.
     implementation(libs.bundles.tensorflow.lite)
 }
