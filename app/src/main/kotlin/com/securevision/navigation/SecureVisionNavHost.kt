@@ -2,10 +2,8 @@ package com.securevision.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.People
-import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.VideoLibrary
 import androidx.compose.material.icons.outlined.Videocam
@@ -15,15 +13,20 @@ import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.securevision.R
+import com.securevision.feature.auth.navigation.forgotPasswordScreen
+import com.securevision.feature.auth.navigation.loginScreen
+import com.securevision.feature.auth.navigation.profileScreen
+import com.securevision.feature.auth.navigation.signUpScreen
 import com.securevision.feature.dashboard.navigation.dashboardScreen
 import com.securevision.ui.PlaceholderScreen
 
 /**
  * The application navigation graph.
  *
- * Every destination currently renders a [PlaceholderScreen]. Later phases replace
- * each `composable { }` body with the real screen from its feature module; the
- * graph shape, the routes and the back-stack behaviour do not change.
+ * Authentication and the dashboard are real screens owned by their feature
+ * modules; the rest still render a [PlaceholderScreen] and are replaced in later
+ * phases. The graph shape, routes and back-stack behaviour do not change when
+ * they are.
  *
  * @param navState Navigation state driving this host.
  * @param startDestination Route the graph opens on.
@@ -40,27 +43,19 @@ fun SecureVisionNavHost(
         startDestination = startDestination,
         modifier = modifier,
     ) {
-        composable(SecureVisionRoute.Login.route) {
-            PlaceholderScreen(
-                icon = Icons.Outlined.Lock,
-                title = stringResource(R.string.destination_login),
-                description = stringResource(R.string.placeholder_login),
-                actionLabel = stringResource(R.string.action_continue_to_dashboard),
-                onAction = navState::navigateToDashboardAfterSignIn,
-            )
-        }
+        // --- Authentication --------------------------------------------------
+        loginScreen(
+            onAuthenticated = navState::navigateToDashboardAfterAuth,
+            onForgotPassword = { navState.navigateTo(SecureVisionRoute.ForgotPassword) },
+        )
 
-        composable(SecureVisionRoute.SignUp.route) {
-            PlaceholderScreen(
-                icon = Icons.Outlined.PersonAdd,
-                title = stringResource(R.string.destination_sign_up),
-                description = stringResource(R.string.placeholder_sign_up),
-            )
-        }
+        signUpScreen(onSignUpComplete = navState::navigateToDashboardAfterAuth)
 
-        // The first real screen. Its route and graph entry are owned by
-        // :feature:feature-dashboard, so :app composes the feature rather than
-        // knowing how it is built.
+        forgotPasswordScreen(onPasswordReset = navState::navigateToLoginAfterReset)
+
+        profileScreen()
+
+        // --- Dashboard -------------------------------------------------------
         dashboardScreen(
             onNavigateToLive = { navState.navigateToTopLevel(TopLevelDestination.LIVE) },
             onNavigateToAlerts = { navState.navigateToTopLevel(TopLevelDestination.ALERTS) },
@@ -68,6 +63,7 @@ fun SecureVisionNavHost(
             onNavigateToSettings = { navState.navigateToTopLevel(TopLevelDestination.SETTINGS) },
         )
 
+        // --- Awaiting later phases -------------------------------------------
         composable(SecureVisionRoute.Live.route) {
             PlaceholderScreen(
                 icon = Icons.Outlined.Videocam,

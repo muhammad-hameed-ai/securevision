@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,12 +31,14 @@ import com.securevision.navigation.TopLevelDestination
  *
  * @param selected The destination currently shown, or `null` if none is.
  * @param onDestinationSelected Invoked with the chosen destination.
+ * @param onLogout Invoked from the footer action; clears the session.
  * @param modifier Modifier applied to the sheet.
  */
 @Composable
 fun SecureVisionDrawer(
     selected: TopLevelDestination?,
     onDestinationSelected: (TopLevelDestination) -> Unit,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ModalDrawerSheet(
@@ -89,6 +93,39 @@ fun SecureVisionDrawer(
                     ),
                 )
             }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(
+                    horizontal = SecureVisionDimens.spacingMedium,
+                    vertical = SecureVisionDimens.spacingMediumSmall,
+                ),
+                color = MaterialTheme.colorScheme.outlineVariant,
+            )
+
+            // Sign-out sits below the divider rather than among the destinations:
+            // it is an action, not a place, and separating it makes it much
+            // harder to hit while reaching for My Account directly above.
+            NavigationDrawerItem(
+                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                selected = false,
+                label = {
+                    Text(
+                        text = stringResource(R.string.action_logout),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                },
+                icon = {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.Logout,
+                        contentDescription = null,
+                    )
+                },
+                onClick = onLogout,
+                colors = NavigationDrawerItemDefaults.colors(
+                    unselectedIconColor = MaterialTheme.colorScheme.error,
+                    unselectedTextColor = MaterialTheme.colorScheme.error,
+                ),
+            )
         }
     }
 }
@@ -122,6 +159,7 @@ private fun SecureVisionDrawerPreview() {
         SecureVisionDrawer(
             selected = TopLevelDestination.DASHBOARD,
             onDestinationSelected = {},
+            onLogout = {},
         )
     }
 }

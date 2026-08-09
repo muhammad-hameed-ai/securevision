@@ -46,8 +46,14 @@ mlkitFaceDetection = "16.1.6"
 tensorflowLite = "2.16.1"
 tensorflowLiteSupport = "0.4.4"
 
-# --- Firebase (app-login account only) -------------------------------------
+# --- Firebase (retained for later phases; the login account is now offline) --
 firebaseBom = "33.5.1"
+
+# --- Security --------------------------------------------------------------
+# at.favre.lib rather than org.mindrot:jbcrypt, which has had no release since
+# 2017. This one is maintained, Android-targeted, and takes char[] rather than
+# String so the password is not pinned in the string pool until GC.
+bcrypt = "0.10.2"
 
 # --- Test ------------------------------------------------------------------
 junit = "4.13.2"
@@ -128,6 +134,9 @@ tensorflow-lite-gpu-delegate-plugin = { group = "org.tensorflow", name = "tensor
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
+
+# --- Security --------------------------------------------------------------
+bcrypt = { group = "at.favre.lib", name = "bcrypt", version.ref = "bcrypt" }
 
 # --- Test ------------------------------------------------------------------
 junit = { group = "junit", name = "junit", version.ref = "junit" }

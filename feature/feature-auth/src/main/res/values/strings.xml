@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Shared framing -->
+    <string name="auth_wordmark">SecureVision</string>
+
+    <!-- Login -->
+    <string name="auth_login_title">Welcome back</string>
+    <string name="auth_login_subtitle">Sign in to your operator account.</string>
+    <string name="auth_login_action">Sign in</string>
+    <string name="auth_login_forgot_password">Forgot your password?</string>
+
+    <!-- Sign-up -->
+    <string name="auth_signup_title">Create your account</string>
+    <string name="auth_signup_subtitle">This account stays on this device. Nothing is uploaded.</string>
+    <string name="auth_signup_action">Create account</string>
+
+    <!-- Fields -->
+    <string name="auth_field_username">Username</string>
+    <string name="auth_field_full_name">Full name</string>
+    <string name="auth_field_cnic">CNIC</string>
+    <string name="auth_field_password">Password</string>
+    <string name="auth_field_confirm_password">Confirm password</string>
+    <string name="auth_field_recovery_code">Recovery code</string>
+    <string name="auth_field_new_password">New password</string>
+
+    <!-- Field hints -->
+    <string name="auth_hint_cnic">13 digits, dashes optional</string>
+    <string name="auth_hint_password">At least 8 characters</string>
+
+    <!-- Recovery code, shown once -->
+    <string name="auth_recovery_title">Write this down now</string>
+    <string name="auth_recovery_subtitle">This is the only way back into your account if you forget your password. It is stored on this device as a one-way hash and cannot be shown again — not by you, not by the app.</string>
+    <string name="auth_recovery_warning">Uninstalling the app deletes your account and every enrolled profile. There is no cloud backup and no password reset without this code.</string>
+    <string name="auth_recovery_copy">Copy code</string>
+    <string name="auth_recovery_copied">Recovery code copied</string>
+    <string name="auth_recovery_confirm">I have written it down</string>
+    <string name="auth_recovery_content_description">Recovery code: %1$s</string>
+
+    <!-- Forgot password -->
+    <string name="auth_forgot_title">Reset your password</string>
+    <string name="auth_forgot_subtitle">Enter the recovery code you saved when you created the account.</string>
+    <string name="auth_forgot_action">Set new password</string>
+    <string name="auth_forgot_success">Password updated. Sign in with your new password.</string>
+
+    <!-- My Account -->
+    <string name="auth_profile_title">My Account</string>
+    <string name="auth_profile_username">Username</string>
+    <string name="auth_profile_full_name">Full name</string>
+    <string name="auth_profile_cnic">CNIC</string>
+    <string name="auth_profile_member_since">Member since</string>
+    <string name="auth_profile_storage_note">Stored on this device only.</string>
+    <string name="auth_profile_logout">Log out</string>
+    <string name="auth_profile_empty_title">Not signed in</string>
+    <string name="auth_profile_empty_subtitle">Sign in to see your account details.</string>
+
+    <!-- Errors -->
+    <string name="auth_error_blank_username">Enter your username.</string>
+    <string name="auth_error_username_too_short">Username must be at least 3 characters.</string>
+    <string name="auth_error_blank_full_name">Enter your full name.</string>
+    <string name="auth_error_blank_password">Enter your password.</string>
+    <string name="auth_error_password_too_short">Password must be at least 8 characters.</string>
+    <string name="auth_error_password_too_long">Password must be 72 characters or fewer.</string>
+    <string name="auth_error_password_mismatch">The two passwords do not match.</string>
+    <string name="auth_error_invalid_cnic">CNIC must be exactly 13 digits.</string>
+    <string name="auth_error_account_exists">An account already exists on this device.</string>
+    <string name="auth_error_username_taken">That username is already in use.</string>
+    <string name="auth_error_invalid_credentials">Incorrect username or password.</string>
+    <string name="auth_error_no_account">No account exists on this device yet.</string>
+    <string name="auth_error_invalid_recovery_code">That recovery code does not match this account.</string>
+    <string name="auth_error_unexpected">Something went wrong. Try again.</string>
+
+</resources>

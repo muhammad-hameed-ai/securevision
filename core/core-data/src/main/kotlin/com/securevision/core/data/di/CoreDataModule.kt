@@ -1,11 +1,13 @@
 package com.securevision.core.data.di
 
 import com.securevision.core.data.repository.AlertRepositoryImpl
+import com.securevision.core.data.repository.AuthRepositoryImpl
 import com.securevision.core.data.repository.DetectionEventRepositoryImpl
 import com.securevision.core.data.repository.EnrolledProfileRepositoryImpl
 import com.securevision.core.data.repository.RecordingRepositoryImpl
 import com.securevision.core.data.repository.SettingsRepositoryImpl
 import com.securevision.core.domain.repository.AlertRepository
+import com.securevision.core.domain.repository.AuthRepository
 import com.securevision.core.domain.repository.DetectionEventRepository
 import com.securevision.core.domain.repository.EnrolledProfileRepository
 import com.securevision.core.domain.repository.RecordingRepository
@@ -19,13 +21,20 @@ import javax.inject.Singleton
 /**
  * Binds the `core-domain` repository contracts to their on-device implementations.
  *
- * `AuthRepository` is deliberately absent: it is still bound to the Phase 1 stub
- * in `:app` and moves here in Phase 3 with the Firebase implementation. That
- * split is why it is the only contract whose data does not stay on the device.
+ * Every contract is now bound here, including `AuthRepository` — the Phase 1 stub
+ * in `:app` has been deleted. With Firebase dropped, no repository in this module
+ * touches the network: the entire application state, account included, lives on
+ * the device.
  */
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class CoreDataModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindAuthRepository(
+        implementation: AuthRepositoryImpl,
+    ): AuthRepository
 
     @Binds
     @Singleton

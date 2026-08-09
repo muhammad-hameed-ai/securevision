@@ -27,9 +27,19 @@ sealed interface SecureVisionRoute {
         override val route: String = AuthRoutes.LOGIN
     }
 
-    /** Account registration screen. */
+    /** Account registration, including the one-time recovery code. */
     data object SignUp : SecureVisionRoute {
         override val route: String = AuthRoutes.SIGN_UP
+    }
+
+    /** Password reset using the recovery code. */
+    data object ForgotPassword : SecureVisionRoute {
+        override val route: String = AuthRoutes.FORGOT_PASSWORD
+    }
+
+    /** The signed-in operator's own account. */
+    data object Profile : SecureVisionRoute {
+        override val route: String = AuthRoutes.PROFILE
     }
 
     /** Home screen once signed in. */
@@ -65,5 +75,20 @@ sealed interface SecureVisionRoute {
     /** Preferences and account. */
     data object Settings : SecureVisionRoute {
         override val route: String = SettingsRoutes.SETTINGS
+    }
+
+    companion object {
+        /**
+         * Destinations that belong to the signed-out flow.
+         *
+         * The shell uses this to tell "the operator is legitimately on an auth
+         * screen" from "the operator is signed out but still looking at the app",
+         * so a password reset in progress is not yanked back to login.
+         */
+        val AUTH_ROUTES: Set<String> = setOf(
+            Login.route,
+            SignUp.route,
+            ForgotPassword.route,
+        )
     }
 }

@@ -14,6 +14,14 @@ object Constants {
         const val DATABASE_NAME = "securevision.db"
         const val SETTINGS_DATASTORE_NAME = "securevision_settings"
 
+        /**
+         * Session lives in its own preferences file, separate from settings.
+         *
+         * Keeping them apart means a future "reset settings" cannot silently sign
+         * the operator out, and a logout cannot disturb recognition thresholds.
+         */
+        const val SESSION_DATASTORE_NAME = "securevision_session"
+
         /** Internal-storage directory holding enrolment photos. */
         const val PROFILE_PHOTO_DIRECTORY = "profiles"
 

@@ -49,14 +49,43 @@ class SecureVisionNavState(val navController: NavHostController) {
     }
 
     /**
-     * Moves from a route within the authentication flow to the dashboard.
+     * Moves from the authentication flow to the dashboard.
      *
-     * Clears the auth screens from the back stack so the system back button
-     * cannot return to a login screen the user has already passed.
+     * Clears the entire back stack rather than popping to a named route, because
+     * the operator may have arrived from Login, from Sign-up, or from Sign-up via
+     * the recovery-code screen. Whichever it was, Back from the dashboard must
+     * exit the app, never return to a screen they have already satisfied.
      */
-    fun navigateToDashboardAfterSignIn() {
+    fun navigateToDashboardAfterAuth() {
         navController.navigate(SecureVisionRoute.Dashboard.route) {
-            popUpTo(SecureVisionRoute.Login.route) { inclusive = true }
+            popUpTo(navController.graph.id) { inclusive = true }
+            launchSingleTop = true
+        }
+    }
+
+    /**
+     * Sends a signed-out operator back to the authentication flow.
+     *
+     * No-ops when they are already somewhere in that flow, so a password reset in
+     * progress is not interrupted by the very state that reset is meant to fix.
+     *
+     * @param route The auth destination to land on.
+     */
+    fun navigateToAuthIfElsewhere(route: SecureVisionRoute) {
+        val current = navController.currentDestination?.route ?: return
+
+        if (current in SecureVisionRoute.AUTH_ROUTES) return
+
+        navController.navigate(route.route) {
+            popUpTo(navController.graph.id) { inclusive = true }
+            launchSingleTop = true
+        }
+    }
+
+    /** Returns to the sign-in screen after a password reset. */
+    fun navigateToLoginAfterReset() {
+        navController.navigate(SecureVisionRoute.Login.route) {
+            popUpTo(navController.graph.id) { inclusive = true }
             launchSingleTop = true
         }
     }

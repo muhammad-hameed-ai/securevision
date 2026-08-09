@@ -2,6 +2,7 @@ package com.securevision.navigation
 
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.NotificationsActive
@@ -9,6 +10,7 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.NotificationsActive
@@ -77,6 +79,21 @@ enum class TopLevelDestination(
         selectedIcon = Icons.Filled.Settings,
         unselectedIcon = Icons.Outlined.Settings,
         labelRes = R.string.destination_settings,
+    ),
+
+    /**
+     * The operator's own account.
+     *
+     * Labelled "My Account" rather than "Profile", and placed last: the drawer
+     * already contains **Profiles**, meaning the enrolled people the camera
+     * recognises. Two adjacent entries one letter apart, meaning entirely
+     * different things, is precisely the confusion this product cannot afford.
+     */
+    MY_ACCOUNT(
+        destination = SecureVisionRoute.Profile,
+        selectedIcon = Icons.Filled.AccountCircle,
+        unselectedIcon = Icons.Outlined.AccountCircle,
+        labelRes = R.string.destination_my_account,
     );
 
     /** The navigation route string for this entry. */

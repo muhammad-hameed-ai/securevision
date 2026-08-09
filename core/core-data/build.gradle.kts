@@ -17,6 +17,10 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.datastore.preferences)
 
+    // Password and recovery-code hashing. Confined to this module: no hash and no
+    // plaintext appears on a domain model, so nothing above the data layer needs it.
+    implementation(libs.bcrypt)
+
     // Robolectric supplies an Android Context on the JVM, so the in-memory Room
     // DAO test runs inside `gradlew build` rather than needing a connected device.
     testImplementation(libs.robolectric)

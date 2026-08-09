@@ -8,16 +8,15 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 /**
- * Streams the authentication state of the app-login account.
+ * Streams the launch gate: whether an account exists, and whether it is signed in.
  *
- * The app shell collects this to decide between the login screen and the
- * dashboard, which is what makes a sign-out take effect everywhere at once.
+ * The app shell collects this to choose between sign-up, login and the
+ * dashboard, which is what makes a logout take effect everywhere at once.
  */
-class ObserveSessionUseCase @Inject constructor(
+class ObserveAuthStateUseCase @Inject constructor(
     private val authRepository: AuthRepository,
     dispatcherProvider: DispatcherProvider,
 ) : FlowUseCase<Unit, AuthSession>(dispatcherProvider.io) {
 
-    override fun execute(parameters: Unit): Flow<AuthSession> =
-        authRepository.getCurrentSession()
+    override fun execute(parameters: Unit): Flow<AuthSession> = authRepository.observeAuthState()
 }

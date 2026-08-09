@@ -9,10 +9,12 @@ import com.securevision.core.data.database.dao.AlertDao
 import com.securevision.core.data.database.dao.DetectionEventDao
 import com.securevision.core.data.database.dao.EnrolledProfileDao
 import com.securevision.core.data.database.dao.RecordingDao
+import com.securevision.core.data.database.dao.UserAccountDao
 import com.securevision.core.data.database.entity.AlertEntity
 import com.securevision.core.data.database.entity.DetectionEventEntity
 import com.securevision.core.data.database.entity.EnrolledProfileEntity
 import com.securevision.core.data.database.entity.RecordingEntity
+import com.securevision.core.data.database.entity.UserAccountEntity
 
 /**
  * The on-device database. Every table here stays on the phone.
@@ -28,6 +30,7 @@ import com.securevision.core.data.database.entity.RecordingEntity
         AlertEntity::class,
         DetectionEventEntity::class,
         RecordingEntity::class,
+        UserAccountEntity::class,
     ],
     version = SecureVisionDatabase.VERSION,
     exportSchema = true,
@@ -47,8 +50,17 @@ abstract class SecureVisionDatabase : RoomDatabase() {
     /** Recorded clip metadata. */
     abstract fun recordingDao(): RecordingDao
 
+    /** The single app-login account. */
+    abstract fun userAccountDao(): UserAccountDao
+
     companion object {
-        /** Schema version. Increment only alongside a migration. */
-        const val VERSION = 1
+        /**
+         * Schema version. Increment only alongside a migration in
+         * [com.securevision.core.data.database.migration.Migrations].
+         *
+         * v1 — Phase 2: profiles, alerts, detection events, recordings.
+         * v2 — Phase 3: the app-login account.
+         */
+        const val VERSION = 2
     }
 }

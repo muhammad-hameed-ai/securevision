@@ -30,7 +30,10 @@ class MainActivity : ComponentActivity() {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
             SecureVisionTheme {
-                SecureVisionAppShell(uiState = uiState)
+                SecureVisionAppShell(
+                    uiState = uiState,
+                    onLogout = viewModel::logout,
+                )
             }
         }
     }

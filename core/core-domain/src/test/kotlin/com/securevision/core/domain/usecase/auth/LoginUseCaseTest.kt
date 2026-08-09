@@ -22,9 +22,8 @@ class LoginUseCaseTest {
     @Test
     fun `returns the account on a successful login`() = runTest {
         coEvery { authRepository.login(USERNAME, PASSWORD) } returns ACCOUNT
-        val useCase = useCase()
 
-        val result = useCase(LoginUseCase.Params(USERNAME, PASSWORD))
+        val result = useCase()(LoginUseCase.Params(USERNAME, PASSWORD))
 
         assertEquals(Result.Success(ACCOUNT), result)
     }
@@ -32,18 +31,15 @@ class LoginUseCaseTest {
     @Test
     fun `trims surrounding whitespace from the username`() = runTest {
         coEvery { authRepository.login(USERNAME, PASSWORD) } returns ACCOUNT
-        val useCase = useCase()
 
-        useCase(LoginUseCase.Params("  $USERNAME  ", PASSWORD))
+        useCase()(LoginUseCase.Params("  $USERNAME  ", PASSWORD))
 
         coVerify(exactly = 1) { authRepository.login(USERNAME, PASSWORD) }
     }
 
     @Test
     fun `rejects a blank username without calling the repository`() = runTest {
-        val useCase = useCase()
-
-        val result = useCase(LoginUseCase.Params("   ", PASSWORD))
+        val result = useCase()(LoginUseCase.Params("   ", PASSWORD))
 
         assertReason(result, AuthValidationException.Reason.BLANK_USERNAME)
         coVerify(exactly = 0) { authRepository.login(any(), any()) }
@@ -51,23 +47,33 @@ class LoginUseCaseTest {
 
     @Test
     fun `rejects a blank password without calling the repository`() = runTest {
-        val useCase = useCase()
-
-        val result = useCase(LoginUseCase.Params(USERNAME, ""))
+        val result = useCase()(LoginUseCase.Params(USERNAME, ""))
 
         assertReason(result, AuthValidationException.Reason.BLANK_PASSWORD)
         coVerify(exactly = 0) { authRepository.login(any(), any()) }
     }
 
     @Test
-    fun `surfaces a repository failure as an Error`() = runTest {
-        coEvery { authRepository.login(any(), any()) } throws IllegalStateException("no network")
-        val useCase = useCase()
+    fun `does not apply the length rule to an existing password`() = runTest {
+        // Six characters — below today's minimum, but an account created under the
+        // Phase 1 rule must still be able to sign in rather than be locked out.
+        coEvery { authRepository.login(USERNAME, "short1") } returns ACCOUNT
 
-        val result = useCase(LoginUseCase.Params(USERNAME, PASSWORD))
+        val result = useCase()(LoginUseCase.Params(USERNAME, "short1"))
 
-        assertTrue(result is Result.Error)
-        assertEquals("no network", (result as Result.Error).message)
+        assertTrue(result is Result.Success)
+        coVerify(exactly = 1) { authRepository.login(USERNAME, "short1") }
+    }
+
+    @Test
+    fun `surfaces a rejected credential as an Error carrying its reason`() = runTest {
+        coEvery { authRepository.login(any(), any()) } throws
+            AuthValidationException(AuthValidationException.Reason.INVALID_CREDENTIALS)
+
+        assertReason(
+            useCase()(LoginUseCase.Params(USERNAME, PASSWORD)),
+            AuthValidationException.Reason.INVALID_CREDENTIALS,
+        )
     }
 
     /**
@@ -96,7 +102,7 @@ class LoginUseCaseTest {
             username = USERNAME,
             fullName = "Muhammad Hameed",
             cnic = "4210112345671",
-            createdAt = 1_700_000_000_000L,
+            createdAt = 1_754_000_000_000L,
         )
     }
 }

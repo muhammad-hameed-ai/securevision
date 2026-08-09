@@ -17,7 +17,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -32,50 +37,78 @@ import com.securevision.navigation.rememberSecureVisionNavState
 import kotlinx.coroutines.launch
 
 /**
- * Root of the SecureVision UI: chrome, drawer and navigation graph.
+ * Root of the SecureVision UI: launch gate, chrome, drawer and navigation graph.
  *
- * The start destination is chosen from [uiState] once, when the session has been
- * read. Phase 3 will drive a mid-session sign-in or sign-out through navigation
- * rather than by swapping the start destination, which would rebuild the graph.
- *
- * @param uiState Session state deciding where the app opens.
+ * @param uiState Auth state deciding where the app opens.
+ * @param onLogout Clears the session. Performs no navigation itself — the shell
+ *   reacts to the resulting state change.
  * @param modifier Modifier applied to the shell.
  * @param navState Navigation state; injectable for tests and previews.
  */
 @Composable
 fun SecureVisionAppShell(
     uiState: MainUiState,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier,
     navState: SecureVisionNavState = rememberSecureVisionNavState(),
 ) {
-    when (uiState) {
-        MainUiState.Loading -> SecureVisionSplash(modifier = modifier)
+    // Resolved once, from the first state that is not Loading. Re-keying NavHost
+    // on every auth change would tear down and rebuild the whole graph mid
+    // transition; sign-in, sign-up and sign-out move through explicit navigation
+    // instead.
+    var startDestination by rememberSaveable { mutableStateOf<String?>(null) }
 
-        MainUiState.Unauthenticated -> ShellContent(
-            navState = navState,
-            startDestination = SecureVisionRoute.Login.route,
-            modifier = modifier,
-        )
-
-        is MainUiState.Authenticated -> ShellContent(
-            navState = navState,
-            startDestination = SecureVisionRoute.Dashboard.route,
-            modifier = modifier,
-        )
+    LaunchedEffect(uiState) {
+        if (startDestination == null) {
+            startDestination = when (uiState) {
+                MainUiState.Loading -> null
+                MainUiState.NeedsAccount -> SecureVisionRoute.SignUp.route
+                MainUiState.Unauthenticated -> SecureVisionRoute.Login.route
+                is MainUiState.Authenticated -> SecureVisionRoute.Dashboard.route
+            }
+        }
     }
+
+    val resolvedStart = startDestination
+
+    if (resolvedStart == null) {
+        SecureVisionSplash(modifier = modifier)
+        return
+    }
+
+    // Sends the operator back to the auth flow whenever the session ends, no
+    // matter which screen ended it. Deliberately a no-op while they are already
+    // in that flow, so a password reset in progress is not interrupted.
+    LaunchedEffect(uiState) {
+        when (uiState) {
+            MainUiState.NeedsAccount ->
+                navState.navigateToAuthIfElsewhere(SecureVisionRoute.SignUp)
+            MainUiState.Unauthenticated ->
+                navState.navigateToAuthIfElsewhere(SecureVisionRoute.Login)
+            MainUiState.Loading, is MainUiState.Authenticated -> Unit
+        }
+    }
+
+    ShellContent(
+        navState = navState,
+        startDestination = resolvedStart,
+        onLogout = onLogout,
+        modifier = modifier,
+    )
 }
 
 /**
  * Drawer, top bar and navigation host.
  *
- * The drawer and top bar appear only on top-level destinations: the
- * authentication screens are full-bleed, and offering a drawer there would let
- * the user walk past the login screen.
+ * The drawer and top bar appear only on top-level destinations: the auth screens
+ * are full-bleed, and offering a drawer there would let the operator walk past
+ * the very gate that protects the app.
  */
 @Composable
 private fun ShellContent(
     navState: SecureVisionNavState,
     startDestination: String,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -95,6 +128,10 @@ private fun ShellContent(
                 onDestinationSelected = { destination ->
                     coroutineScope.launch { drawerState.close() }
                     navState.navigateToTopLevel(destination)
+                },
+                onLogout = {
+                    coroutineScope.launch { drawerState.close() }
+                    onLogout()
                 },
             )
         },
@@ -119,8 +156,8 @@ private fun ShellContent(
                         },
                     )
 
-                    currentRoute == SecureVisionRoute.SignUp.route -> SVTopBar(
-                        title = stringResource(R.string.destination_sign_up),
+                    currentRoute == SecureVisionRoute.ForgotPassword.route -> SVTopBar(
+                        title = stringResource(R.string.destination_forgot_password),
                         onBack = navState::navigateUp,
                     )
                 }

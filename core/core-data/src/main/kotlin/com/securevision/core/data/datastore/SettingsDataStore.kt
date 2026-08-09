@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.securevision.core.data.di.SettingsPreferences
 import com.securevision.core.model.AppSettings
 import com.securevision.core.model.CameraResolution
 import java.io.IOException
@@ -28,7 +29,7 @@ import kotlinx.coroutines.flow.map
  */
 @Singleton
 class SettingsDataStore @Inject constructor(
-    private val dataStore: DataStore<Preferences>,
+    @param:SettingsPreferences private val dataStore: DataStore<Preferences>,
 ) {
 
     /**

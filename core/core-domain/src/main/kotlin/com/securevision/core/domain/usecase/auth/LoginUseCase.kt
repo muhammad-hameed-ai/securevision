@@ -7,10 +7,12 @@ import com.securevision.core.model.UserAccount
 import javax.inject.Inject
 
 /**
- * Signs in an existing app-login account.
+ * Signs in the operator account.
  *
- * Validates the input before touching the network, so an obviously empty form
- * fails instantly and offline rather than after a round trip.
+ * Only checks that the fields are present. Length and format rules deliberately
+ * are not applied here: an existing account created under older rules must still
+ * be able to sign in, and rejecting its password locally would lock the operator
+ * out of their own device.
  */
 class LoginUseCase @Inject constructor(
     private val authRepository: AuthRepository,

@@ -8,6 +8,9 @@ import com.securevision.core.data.database.dao.AlertDao
 import com.securevision.core.data.database.dao.DetectionEventDao
 import com.securevision.core.data.database.dao.EnrolledProfileDao
 import com.securevision.core.data.database.dao.RecordingDao
+import com.securevision.core.data.database.dao.UserAccountDao
+import com.securevision.core.data.database.migration.Migrations
+import com.securevision.core.data.security.PasswordHasher
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -36,7 +39,20 @@ object DatabaseModule {
         context = context,
         klass = SecureVisionDatabase::class.java,
         name = Constants.Storage.DATABASE_NAME,
-    ).build()
+    )
+        .addMigrations(*Migrations.ALL)
+        .build()
+
+    /**
+     * BCrypt hasher at the production work factor.
+     *
+     * Provided rather than `@Inject`-constructed because the cost is a
+     * constructor parameter: tests build their own at a cheap factor, while the
+     * graph always gets [PasswordHasher.DEFAULT_COST].
+     */
+    @Provides
+    @Singleton
+    fun providePasswordHasher(): PasswordHasher = PasswordHasher()
 
     @Provides
     fun provideEnrolledProfileDao(database: SecureVisionDatabase): EnrolledProfileDao =
@@ -51,4 +67,8 @@ object DatabaseModule {
 
     @Provides
     fun provideRecordingDao(database: SecureVisionDatabase): RecordingDao = database.recordingDao()
+
+    @Provides
+    fun provideUserAccountDao(database: SecureVisionDatabase): UserAccountDao =
+        database.userAccountDao()
 }
