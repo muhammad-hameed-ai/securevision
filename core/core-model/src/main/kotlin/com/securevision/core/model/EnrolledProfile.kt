@@ -12,8 +12,9 @@ package com.securevision.core.model
  * @property age Age in years, captured at enrolment.
  * @property photoUri `content://` or `file://` URI of the enrolment photo held in
  *   the app's internal storage.
- * @property embedding L2-normalised FaceNet-512 embedding of the aligned face
- *   crop. Cosine similarity against this vector is what produces a match.
+ * @property embedding L2-normalised embedding of the **aligned** face crop.
+ *   Cosine similarity against this vector is what produces a match. Its length is
+ *   whatever the model that produced it emits — see [embeddingSize].
  * @property isWatchlisted Whether a sighting of this person should be escalated
  *   rather than treated as a routine known-person event.
  * @property createdAt Enrolment time, epoch milliseconds UTC.
@@ -27,6 +28,16 @@ class EnrolledProfile(
     val isWatchlisted: Boolean,
     val createdAt: Long,
 ) {
+
+    /**
+     * Dimensionality of this profile's embedding.
+     *
+     * Read from the vector rather than assumed, because it is a property of the
+     * model that produced it. Two embeddings of different lengths came from
+     * different models and are not comparable at all — comparing them would
+     * produce meaningless similarity scores rather than an obvious failure.
+     */
+    val embeddingSize: Int get() = embedding.size
 
     /**
      * Structural equality, with [embedding] compared by content.
@@ -88,7 +99,15 @@ class EnrolledProfile(
     )
 
     companion object {
-        /** Dimensionality of a FaceNet-512 embedding. */
-        const val EMBEDDING_SIZE: Int = 512
+        /**
+         * Dimensionality of the model currently shipped in `ml-face` assets.
+         *
+         * A reference value, **not an invariant**. The embedder reads its real
+         * output dimension from the loaded model, and [embeddingSize] reports what
+         * a given profile actually holds. Treating 512 as a hard rule is how a
+         * swapped model turns into silently wrong match scores instead of a clear
+         * "re-enrol" message.
+         */
+        const val SHIPPED_MODEL_EMBEDDING_SIZE: Int = 512
     }
 }

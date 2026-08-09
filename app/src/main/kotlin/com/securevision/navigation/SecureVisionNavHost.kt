@@ -6,7 +6,6 @@ import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.VideoLibrary
-import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -18,6 +17,7 @@ import com.securevision.feature.auth.navigation.loginScreen
 import com.securevision.feature.auth.navigation.profileScreen
 import com.securevision.feature.auth.navigation.signUpScreen
 import com.securevision.feature.dashboard.navigation.dashboardScreen
+import com.securevision.feature.live.navigation.liveScreen
 import com.securevision.ui.PlaceholderScreen
 
 /**
@@ -63,15 +63,10 @@ fun SecureVisionNavHost(
             onNavigateToSettings = { navState.navigateToTopLevel(TopLevelDestination.SETTINGS) },
         )
 
-        // --- Awaiting later phases -------------------------------------------
-        composable(SecureVisionRoute.Live.route) {
-            PlaceholderScreen(
-                icon = Icons.Outlined.Videocam,
-                title = stringResource(R.string.destination_live),
-                description = stringResource(R.string.placeholder_live),
-            )
-        }
+        // --- Live camera and face recognition --------------------------------
+        liveScreen()
 
+        // --- Awaiting later phases -------------------------------------------
         composable(SecureVisionRoute.Alerts.route) {
             PlaceholderScreen(
                 icon = Icons.Outlined.NotificationsActive,

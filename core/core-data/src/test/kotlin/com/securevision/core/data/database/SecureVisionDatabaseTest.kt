@@ -71,7 +71,7 @@ class SecureVisionDatabaseTest {
 
     @Test
     fun `embedding survives a real database write and read`() = runTest {
-        val embedding = FloatArray(EnrolledProfile.EMBEDDING_SIZE) { it * 0.0013f - 0.3f }
+        val embedding = FloatArray(EnrolledProfile.SHIPPED_MODEL_EMBEDDING_SIZE) { it * 0.0013f - 0.3f }
         profileDao.insert(profile(id = "p1", embedding = embedding))
 
         val stored = profileDao.getById("p1")
@@ -202,7 +202,7 @@ class SecureVisionDatabaseTest {
     private fun profile(
         id: String,
         name: String = "Person $id",
-        embedding: FloatArray = FloatArray(EnrolledProfile.EMBEDDING_SIZE) { 0.01f },
+        embedding: FloatArray = FloatArray(EnrolledProfile.SHIPPED_MODEL_EMBEDDING_SIZE) { 0.01f },
         createdAt: Long = 1_000L,
     ) = EnrolledProfileEntity(
         id = id,

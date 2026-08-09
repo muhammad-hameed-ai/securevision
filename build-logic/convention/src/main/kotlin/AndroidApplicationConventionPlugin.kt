@@ -35,6 +35,18 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 buildConfig = true
             }
 
+            /*
+             * TFLite memory-maps its model files, which only works if the asset is
+             * stored uncompressed in the APK. This has to be set on the
+             * application module: `noCompress` takes effect at packaging time, so
+             * declaring it on the library that owns the asset has no effect on the
+             * final APK. Getting this wrong produces a load failure that points
+             * nowhere near the real cause.
+             */
+            androidResources {
+                noCompress += "tflite"
+            }
+
             buildTypes {
                 getByName("debug") {
                     isMinifyEnabled = false

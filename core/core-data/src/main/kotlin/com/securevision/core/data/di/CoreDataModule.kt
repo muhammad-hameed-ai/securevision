@@ -6,6 +6,8 @@ import com.securevision.core.data.repository.DetectionEventRepositoryImpl
 import com.securevision.core.data.repository.EnrolledProfileRepositoryImpl
 import com.securevision.core.data.repository.RecordingRepositoryImpl
 import com.securevision.core.data.repository.SettingsRepositoryImpl
+import com.securevision.core.data.storage.ProfilePhotoStoreImpl
+import com.securevision.core.domain.engine.ProfilePhotoStore
 import com.securevision.core.domain.repository.AlertRepository
 import com.securevision.core.domain.repository.AuthRepository
 import com.securevision.core.domain.repository.DetectionEventRepository
@@ -65,4 +67,14 @@ abstract class CoreDataModule {
     abstract fun bindSettingsRepository(
         implementation: SettingsRepositoryImpl,
     ): SettingsRepository
+
+    /**
+     * Lets the enrolment path persist a photo without any module above the data
+     * layer gaining filesystem access.
+     */
+    @Binds
+    @Singleton
+    abstract fun bindProfilePhotoStore(
+        implementation: ProfilePhotoStoreImpl,
+    ): ProfilePhotoStore
 }

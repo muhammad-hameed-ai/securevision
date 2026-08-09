@@ -15,8 +15,10 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.activity.compose)
 
-    // The live screen owns the camera surface; the inference engines it feeds are
-    // injected as domain contracts, so no `ml` module is referenced from here.
+    // The live screen owns the camera surface. The inference engine it feeds is
+    // injected as a domain contract, so no `ml` module is referenced from here —
+    // a compile probe in the verification step proves it.
     implementation(libs.bundles.camerax)
 }

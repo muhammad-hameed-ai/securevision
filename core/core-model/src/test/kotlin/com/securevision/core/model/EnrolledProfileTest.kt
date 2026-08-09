@@ -63,7 +63,7 @@ class EnrolledProfileTest {
 
     @Test
     fun `toString omits raw embedding values`() {
-        val rendered = profile(embedding = FloatArray(EnrolledProfile.EMBEDDING_SIZE)).toString()
+        val rendered = profile(embedding = FloatArray(EnrolledProfile.SHIPPED_MODEL_EMBEDDING_SIZE)).toString()
 
         assertTrue(rendered.contains("512 dims"))
         assertTrue(rendered.contains("id=profile-1"))

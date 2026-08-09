@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Permission -->
+    <string name="live_permission_title">Camera access needed</string>
+    <string name="live_permission_subtitle">SecureVision uses the camera to detect and recognise faces. Every frame is processed on this device and nothing is uploaded.</string>
+    <string name="live_permission_action">Grant camera access</string>
+
+    <!-- HUD -->
+    <string name="live_indicator">LIVE</string>
+    <string name="live_switch_to_front_camera">Switch to front camera</string>
+    <string name="live_switch_to_back_camera">Switch to back camera</string>
+
+    <!-- Session stats -->
+    <string name="live_stat_total">Total</string>
+    <string name="live_stat_known">Known</string>
+    <string name="live_stat_unknown">Unknown</string>
+
+    <!-- Recognition status banners -->
+    <string name="live_recognition_offline_title">Recognition offline</string>
+    <string name="live_recognition_missing_model">No face model is installed, so faces are detected but not identified. Add facenet_512.tflite to the app assets to enable recognition.</string>
+    <string name="live_recognition_load_failed">The face model could not be loaded. Faces are still detected but not identified.</string>
+    <string name="live_recognition_dimension_mismatch">Your enrolled profiles were created with a different face model, so they cannot be compared. Delete and re-enrol them to restore recognition.</string>
+    <string name="live_no_profiles">No one is enrolled yet, so every face reads as unknown. Use Enrol face to add someone.</string>
+
+    <!-- Enrolment, temporary for Phase 4 -->
+    <string name="live_enrol_action">Enrol face</string>
+    <string name="live_enrol_title">Enrol this face</string>
+    <string name="live_enrol_subtitle">Captures the face in view now, using the same alignment and embedding the live pipeline uses.</string>
+    <string name="live_enrol_name">Name</string>
+    <string name="live_enrol_age">Age</string>
+    <string name="live_enrol_confirm">Enrol</string>
+    <string name="live_enrol_saving">Saving…</string>
+    <string name="live_enrol_cancel">Cancel</string>
+
+    <!-- Enrolment outcomes -->
+    <string name="live_enrol_success">%1$s enrolled</string>
+    <string name="live_enrol_error_no_face">No face in view. Point the camera at the person and try again.</string>
+    <string name="live_enrol_error_multiple_faces">More than one face in view. Enrol one person at a time.</string>
+    <string name="live_enrol_error_poor_quality">Face too small or turned too far. Move closer and look at the camera.</string>
+    <string name="live_enrol_error_landmarks">Could not locate the facial landmarks needed to align the face. Try better lighting.</string>
+    <string name="live_enrol_error_model">No face model is loaded, so no embedding can be created.</string>
+    <string name="live_enrol_error_generic">Could not enrol that face. Try again.</string>
+
+</resources>

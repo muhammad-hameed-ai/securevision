@@ -33,5 +33,9 @@ google-services.json
 .DS_Store
 
 # --- On-device ML models --------------------------------------------------
-# Large binaries are distributed out-of-band, not through git.
+# Regenerable 45 MB+ binaries, kept out of git. Every change would store another
+# full copy, and the model can be rebuilt from the recipe in the README.
+# Its absence is a supported state: the app still detects, aligns and boxes
+# faces, and says recognition is unavailable.
+*.tflite
 *.tflite.bak

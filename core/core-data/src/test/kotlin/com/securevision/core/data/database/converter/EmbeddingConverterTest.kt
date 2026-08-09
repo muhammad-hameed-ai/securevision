@@ -24,7 +24,7 @@ class EmbeddingConverterTest {
     @Test
     fun `round trips a full FaceNet-512 embedding bit-exactly`() {
         val random = Random(seed = 20260809)
-        val original = FloatArray(EnrolledProfile.EMBEDDING_SIZE) {
+        val original = FloatArray(EnrolledProfile.SHIPPED_MODEL_EMBEDDING_SIZE) {
             random.nextFloat() * 2f - 1f
         }
 
@@ -63,11 +63,11 @@ class EmbeddingConverterTest {
 
     @Test
     fun `encodes four bytes per float`() {
-        val embedding = FloatArray(EnrolledProfile.EMBEDDING_SIZE) { 0.5f }
+        val embedding = FloatArray(EnrolledProfile.SHIPPED_MODEL_EMBEDDING_SIZE) { 0.5f }
 
         val encoded = converter.fromFloatArray(embedding)
 
-        assertEquals(EnrolledProfile.EMBEDDING_SIZE * Float.SIZE_BYTES, encoded.size)
+        assertEquals(EnrolledProfile.SHIPPED_MODEL_EMBEDDING_SIZE * Float.SIZE_BYTES, encoded.size)
     }
 
     @Test

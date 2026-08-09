@@ -21,7 +21,7 @@ class MapperTest {
             name = "Ayesha Khan",
             age = 31,
             photoUri = "file:///data/user/0/com.securevision/files/profiles/profile_1.jpg",
-            embedding = FloatArray(EnrolledProfile.EMBEDDING_SIZE) { it * 0.001f },
+            embedding = FloatArray(EnrolledProfile.SHIPPED_MODEL_EMBEDDING_SIZE) { it * 0.001f },
             isWatchlisted = true,
             createdAt = 1_754_000_000_000L,
         )

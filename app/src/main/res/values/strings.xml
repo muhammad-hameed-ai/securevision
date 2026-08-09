@@ -28,10 +28,6 @@
       Phase 1 placeholder copy. Each string is replaced by the real screen in the
       phase it names.
     -->
-    <string name="placeholder_live">
-        Real-time camera with face, weapon and motion detection drawn over the
-        preview. Built in Phase 4.
-    </string>
     <string name="placeholder_alerts">
         Every raised alert, filterable by type, with the snapshot that triggered
         it. Built in Phase 6.
