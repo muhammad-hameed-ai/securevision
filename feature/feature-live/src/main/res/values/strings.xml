@@ -30,6 +30,10 @@
     <string name="live_no_profiles">No one is enrolled yet, so every face reads as unknown. Use Enrol face to add someone.</string>
     <string name="live_weapon_missing_model">No weapon model is installed, so weapons are not detected. Add weapon_detector.tflite to the app assets to enable detection.</string>
     <string name="live_weapon_load_failed">The weapon model could not be loaded, so weapons are not detected.</string>
+    <string name="live_notifications_blocked">Notifications are turned off, so alerts appear only while this screen is open. They are still being recorded. Turn them on in Settings to be told when the app is in the background.</string>
+
+    <!-- Alarm -->
+    <string name="live_silence_alarm">Silence alarm</string>
 
     <!-- Enrolment, temporary for Phase 4 -->
     <string name="live_enrol_action">Enrol face</string>

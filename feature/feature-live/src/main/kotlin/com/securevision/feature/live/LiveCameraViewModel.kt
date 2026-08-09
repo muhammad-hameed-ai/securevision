@@ -3,9 +3,12 @@ package com.securevision.feature.live
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.securevision.core.common.Constants
 import com.securevision.core.common.result.Result
 import com.securevision.core.common.result.getOrDefault
+import com.securevision.core.common.result.getOrNull
+import com.securevision.core.domain.alerting.AlertGate
+import com.securevision.core.domain.alerting.AlertRequest
+import com.securevision.core.domain.alerting.NotificationOutcome
 import com.securevision.core.domain.engine.EngineStatus
 import com.securevision.core.domain.engine.EnrolmentCapture
 import com.securevision.core.domain.engine.FaceFrame
@@ -18,11 +21,12 @@ import com.securevision.core.domain.usecase.live.DetectMotionUseCase
 import com.securevision.core.domain.usecase.live.DetectWeaponsUseCase
 import com.securevision.core.domain.usecase.live.EnrolFaceFromFrameUseCase
 import com.securevision.core.domain.usecase.live.EnrolmentException
+import com.securevision.core.domain.usecase.live.AlertOutcome
 import com.securevision.core.domain.usecase.live.PrepareDetectorsUseCase
+import com.securevision.core.domain.usecase.live.RaiseAlertUseCase
 import com.securevision.core.domain.usecase.live.RecogniseFacesUseCase
-import com.securevision.core.domain.usecase.live.RecordMotionSightingUseCase
-import com.securevision.core.domain.usecase.live.RecordUnknownSightingUseCase
-import com.securevision.core.domain.usecase.live.RecordWeaponSightingUseCase
+import com.securevision.core.domain.usecase.live.SilenceAlarmUseCase
+import com.securevision.core.domain.usecase.live.wasRaised
 import com.securevision.core.domain.usecase.profile.GetEnrolledProfilesUseCase
 import com.securevision.core.domain.usecase.settings.ObserveSettingsUseCase
 import com.securevision.core.model.AppSettings
@@ -58,9 +62,9 @@ class LiveCameraViewModel @Inject constructor(
     private val analyseAttributes: AnalyseAttributesUseCase,
     private val captureSnapshot: CaptureSnapshotUseCase,
     private val enrolFaceFromFrame: EnrolFaceFromFrameUseCase,
-    private val recordUnknownSighting: RecordUnknownSightingUseCase,
-    private val recordWeaponSighting: RecordWeaponSightingUseCase,
-    private val recordMotionSighting: RecordMotionSightingUseCase,
+    private val raiseAlert: RaiseAlertUseCase,
+    private val silenceAlarm: SilenceAlarmUseCase,
+    private val alertGate: AlertGate,
     getEnrolledProfiles: GetEnrolledProfilesUseCase,
     getEnrolledProfileCount: GetEnrolledProfileCountUseCase,
     observeSettings: ObserveSettingsUseCase,
@@ -96,26 +100,6 @@ class LiveCameraViewModel @Inject constructor(
     private val knownTrackingIds = mutableSetOf<Int>()
     private val unknownTrackingIds = mutableSetOf<Int>()
     private var weaponAlertCount = 0
-
-    /**
-     * The single de-duplication guard, shared by every alert type.
-     *
-     * Keyed `kind:id` — tracking id for faces, class name for weapons, which have
-     * no tracking id. One guard rather than one per detector, so the alarms and
-     * notifications of Phase 5b inherit exactly this suppression.
-     */
-    private val alertedKeys = mutableSetOf<String>()
-
-    /**
-     * When each *kind* of alert last fired.
-     *
-     * Per kind, not global. A single timestamp across all kinds would let a face
-     * alert swallow a weapon alert that follows it three seconds later — the
-     * highest-severity event in the app silently dropped because of an unrelated
-     * one. This matches what the window is documented to mean: minimum spacing
-     * between repeated alerts *of the same kind*.
-     */
-    private val lastAlertAtByKind = mutableMapOf<String, Long>()
 
     init {
         _uiState.value = LiveUiState.Ready()
@@ -295,6 +279,32 @@ class LiveCameraViewModel @Inject constructor(
     }
 
     /**
+     * Stops a sounding critical alarm.
+     *
+     * Silences the tone only. The alert stays recorded and the notification stays
+     * in the shade — silencing is the user saying "I have heard it", not "that did
+     * not happen".
+     */
+    fun silenceAlarm() {
+        silenceAlarm.invoke()
+        _uiState.update { state ->
+            (state as? LiveUiState.Ready)?.copy(isAlarmSounding = false) ?: state
+        }
+    }
+
+    /**
+     * Stops the alarm when the screen goes away.
+     *
+     * Without this a critical alarm raised just before the user navigated back
+     * would keep sounding with no visible control to stop it, since detection —
+     * and therefore the Silence button — only exists on this screen.
+     */
+    override fun onCleared() {
+        silenceAlarm.invoke()
+        super.onCleared()
+    }
+
+    /**
      * Switches between front and back cameras.
      *
      * Resets the session counters, the de-duplication keys and the motion
@@ -306,9 +316,11 @@ class LiveCameraViewModel @Inject constructor(
         seenTrackingIds.clear()
         knownTrackingIds.clear()
         unknownTrackingIds.clear()
-        alertedKeys.clear()
-        lastAlertAtByKind.clear()
         weaponAlertCount = 0
+
+        // The gate is shared, so it is cleared through its own contract rather
+        // than by this screen keeping a private copy of the claims.
+        alertGate.reset()
 
         viewModelScope.launch { prepareDetectors.resetMotion() }
 
@@ -380,9 +392,6 @@ class LiveCameraViewModel @Inject constructor(
             .filter { it.detection.matchStatus == MatchStatus.UNKNOWN }
             .filter { it.detection.trackingId >= 0 }
             .forEach { face ->
-                val key = "face:${face.detection.trackingId}"
-                if (!claimAlertSlot(key, now)) return@forEach
-
                 // Attributes only on a committed unknown, not on every frame: the
                 // classifier cost is per face, and a face still being voted on may
                 // never become an alert at all.
@@ -397,8 +406,9 @@ class LiveCameraViewModel @Inject constructor(
                     captureSnapshot(frame, face.detection.boundingBox)
                 }
 
-                recordUnknownSighting(
-                    RecordUnknownSightingUseCase.Params(
+                raise(
+                    AlertRequest.unknownPerson(
+                        trackingId = face.detection.trackingId,
                         confidence = face.detection.confidence,
                         cameraFacing = facing(isFrontCamera),
                         snapshotUri = snapshotUri,
@@ -416,14 +426,8 @@ class LiveCameraViewModel @Inject constructor(
         now: Long,
     ) {
         weapons.forEach { weapon ->
-            // Keyed by class rather than tracking id, which weapons do not have.
-            // Same guard, same window.
-            if (!claimAlertSlot("weapon:${weapon.weaponType}", now)) return@forEach
-
-            weaponAlertCount++
-
-            recordWeaponSighting(
-                RecordWeaponSightingUseCase.Params(
+            val outcome = raise(
+                AlertRequest.weapon(
                     weaponType = weapon.weaponType,
                     confidence = weapon.confidence,
                     cameraFacing = facing(isFrontCamera),
@@ -431,6 +435,10 @@ class LiveCameraViewModel @Inject constructor(
                     timestamp = now,
                 ),
             )
+
+            // Counted only when the gate actually let it through, so the stat
+            // matches the number of alerts the user was shown.
+            if (outcome?.wasRaised == true) weaponAlertCount++
         }
     }
 
@@ -441,12 +449,11 @@ class LiveCameraViewModel @Inject constructor(
         now: Long,
     ) {
         // The detector's own debounce already collapses continuous movement into
-        // one event, so only a new event reaches the guard at all.
+        // one event, so only a new event reaches the gate at all.
         if (!motion.isNewEvent) return
-        if (!claimAlertSlot("motion", now)) return
 
-        recordMotionSighting(
-            RecordMotionSightingUseCase.Params(
+        raise(
+            AlertRequest.motion(
                 intensity = motion.intensity,
                 cameraFacing = facing(isFrontCamera),
                 // Whole frame: a motion event has no subject to crop to.
@@ -457,28 +464,28 @@ class LiveCameraViewModel @Inject constructor(
     }
 
     /**
-     * The de-duplication guard every alert type shares.
+     * Hands one request to the single alerting path.
      *
-     * Two conditions: a key alerts at most once, and two alerts of the same kind
-     * never fall inside the same window. The second is what stops a detector that
-     * keeps reassigning tracking ids from bypassing the first.
-     *
-     * @param key `kind:id`, where the kind decides which window applies.
-     * @param now Frame timestamp.
-     * @return `true` when the caller may raise an alert.
+     * De-duplication, persistence, the alarm and the notification all happen
+     * inside [RaiseAlertUseCase]; this ViewModel no longer owns a guard of its
+     * own. What comes back is used only for the parts that are genuinely the
+     * screen's business: whether to count the alert, whether to offer Silence, and
+     * whether to explain that notifications are switched off at the system level.
      */
-    private fun claimAlertSlot(key: String, now: Long): Boolean {
-        if (key in alertedKeys) return false
+    private suspend fun raise(request: AlertRequest): AlertOutcome? {
+        val outcome = raiseAlert(request).getOrNull() ?: return null
 
-        // Zero rather than a sentinel: `now - Long.MIN_VALUE` overflows and would
-        // suppress the very first alert of every kind.
-        val kind = key.substringBefore(KEY_SEPARATOR)
-        val lastOfKind = lastAlertAtByKind[kind] ?: 0L
-        if (now - lastOfKind < Constants.Alerting.DUPLICATE_ALERT_WINDOW_MILLIS) return false
+        if (outcome is AlertOutcome.Raised) {
+            _uiState.update { state ->
+                (state as? LiveUiState.Ready)?.copy(
+                    isAlarmSounding = outcome.alarmSounding,
+                    notificationsBlocked =
+                        outcome.notification == NotificationOutcome.PERMISSION_DENIED,
+                ) ?: state
+            }
+        }
 
-        alertedKeys += key
-        lastAlertAtByKind[kind] = now
-        return true
+        return outcome
     }
 
     private fun facing(isFrontCamera: Boolean) = if (isFrontCamera) FRONT else BACK
@@ -504,9 +511,6 @@ class LiveCameraViewModel @Inject constructor(
 
         /** Changed-pixel fraction that counts as motion. */
         const val MOTION_INTENSITY_THRESHOLD = 0.02f
-
-        /** Splits an alert key into its kind and its identifier. */
-        const val KEY_SEPARATOR = ':'
 
         const val FRONT = "front"
         const val BACK = "back"

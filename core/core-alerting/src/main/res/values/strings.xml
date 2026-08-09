@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Notification channels. Named for what the user would look for when
+         hunting down "the thing that keeps buzzing", not for our severity enum. -->
+    <string name="channel_critical_name">Weapon alarms</string>
+    <string name="channel_critical_description">Highest priority. Sounds the alarm even when the phone is quiet.</string>
+
+    <string name="channel_security_name">Unrecognised people</string>
+    <string name="channel_security_description">Someone the app does not recognise was seen.</string>
+
+    <string name="channel_activity_name">Movement</string>
+    <string name="channel_activity_description">Low priority. Movement in an otherwise still scene.</string>
+
+    <!-- Notification content -->
+    <string name="notification_weapon_title">Weapon detected</string>
+    <string name="notification_weapon_body">%1$s seen on the %2$s camera</string>
+
+    <string name="notification_unknown_title">Unrecognised person</string>
+    <string name="notification_unknown_body">Someone not enrolled was seen on the %1$s camera</string>
+
+    <string name="notification_motion_title">Movement detected</string>
+    <string name="notification_motion_body">Movement on the %1$s camera</string>
+
+    <string name="notification_known_title">Recognised person</string>
+    <string name="notification_known_body">An enrolled person was seen on the %1$s camera</string>
+
+    <string name="camera_front">front</string>
+    <string name="camera_back">back</string>
+
+</resources>

@@ -21,7 +21,4 @@ internal object ProjectConfig {
 
     /** Hilt-aware JUnit runner is introduced in a later phase; the stock runner is enough for now. */
     const val ANDROID_TEST_RUNNER = "androidx.test.runner.AndroidJUnitRunner"
-
-    /** Filename the Google Services plugin looks for inside the application module. */
-    const val GOOGLE_SERVICES_FILE = "google-services.json"
 }

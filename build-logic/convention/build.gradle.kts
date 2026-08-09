@@ -47,10 +47,6 @@ gradlePlugin {
             id = "securevision.android.hilt"
             implementationClass = "AndroidHiltConventionPlugin"
         }
-        register("androidFirebase") {
-            id = "securevision.android.firebase"
-            implementationClass = "AndroidFirebaseConventionPlugin"
-        }
         register("androidRoom") {
             id = "securevision.android.room"
             implementationClass = "AndroidRoomConventionPlugin"

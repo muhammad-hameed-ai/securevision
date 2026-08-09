@@ -4,13 +4,25 @@ An Android security monitoring app with **on-device AI**. Live camera detection 
 people, faces, weapons and motion, with recognition of enrolled individuals — all
 inference runs on the phone.
 
-> **Status: Phase 5a of 7 complete.** Live camera face recognition works on
-> hardware: an enrolled face draws a green box with a name and score, an
-> unenrolled one draws red. Motion detection, the attribute framework and coarse
-> emotion are live; weapon detection is built and wired but inert until a
-> `weapon_detector.tflite` is dropped into the app assets, which it reports
-> honestly rather than failing silently. Alarms and notifications are Phase 5b;
-> recording and the remaining galleries are Phases 6–7.
+> **Status: Phase 5 of 7 complete** (5a + 5b). Live camera face recognition works
+> on hardware: an enrolled face draws a green box with a name and score, an
+> unenrolled one draws red. Motion, the attribute framework, coarse emotion,
+> snapshots, a synthesized alarm, haptics and system notifications are live.
+> Recording and the remaining galleries are Phases 6–7.
+>
+> **The weapon detector is scaffolded and inert.** Detection, letterboxing,
+> non-max suppression and class mapping are written and tested, but no
+> `weapon_detector.tflite` ships with the app. Until one is dropped into
+> `app/src/main/assets/`, the detector reports `MODEL_NOT_INSTALLED` in an amber
+> banner and returns no results — it never pretends to be watching. It verifies
+> input and output shapes at load, so a mismatched model is reported rather than
+> producing nonsense boxes.
+>
+> Alerts run behind a single `AlertGate` in the domain layer: persistence, the
+> alarm and the notification all sit behind one claim, so a de-duplicated alert
+> is suppressed everywhere rather than recorded-but-silent. Alerting only runs
+> while the live screen is open — background monitoring needs a foreground
+> service and arrives with Phase 6 recording.
 
 ---
 
@@ -25,12 +37,41 @@ These are separate on purpose and must not be conflated.
 | Leaves the device | Never | Never |
 | Model | `UserAccount` | `EnrolledProfile` |
 
-**Nothing in this app touches the network.** Firebase was dropped in Phase 3 in
-favour of offline authentication, which has one consequence worth stating plainly:
-the account does **not** survive a reinstall, and there is no password reset
-channel. The mitigation is the one-time recovery code issued at sign-up, stored
-only as a second BCrypt hash. Lose both the password and the code and the only
-way back in is clearing app data — which also destroys the enrolled profiles.
+**Nothing in this app touches the network — and it cannot.** Authentication has
+been offline BCrypt since Phase 3, and Phase 5 removed the last unused cloud
+dependency along with the `INTERNET` permission itself. That has one consequence
+worth stating plainly: the account does **not** survive a reinstall, and there is
+no password reset channel. The mitigation is the one-time recovery code issued at
+sign-up, stored only as a second BCrypt hash. Lose both the password and the code
+and the only way back in is clearing app data — which also destroys the enrolled
+profiles.
+
+### Permissions
+
+The app requests only **CAMERA**, **VIBRATE**, and **POST_NOTIFICATIONS**. No
+network, storage, or device-identity permissions — consistent with fully
+on-device operation.
+
+That list is maintained deliberately, not inherited. Dependencies contribute
+permissions of their own, and three sources had to be dealt with to reach it:
+
+| Permission | Came from | Resolution |
+|---|---|---|
+| `INTERNET`, `ACCESS_NETWORK_STATE` | `com.google.android.datatransport`, pulled in by ML Kit for usage telemetry | Removed in the manifest. Face detection runs from a bundled model and needs no network. |
+| `READ_PHONE_STATE`, `READ/WRITE_EXTERNAL_STORAGE` | *Implied.* `org.tensorflow.lite.gpu.api` ships a manifest with no `targetSdkVersion`, so the merger assumes API 3 and grants the legacy defaults | Removed in the manifest. Nothing in the GPU delegate reads either. |
+| `ACCESS_NETWORK_STATE` | `androidx.media3`, declared before any player existed | Dependency removed; it returns with the Phase 6 player. |
+
+One entry remains in the merged manifest and is not a platform permission:
+`com.securevision.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`, defined by
+`androidx.core` at signature protection level and held only by this app. It grants
+nothing to anything else and is what keeps dynamically registered receivers
+un-exported; removing it would weaken that, so it stays.
+
+Verify the list against a built APK rather than the source manifest:
+
+```
+aapt dump permissions app/build/outputs/apk/debug/app-debug.apk
+```
 
 Cloud backup and device-to-device transfer are disabled outright
 (`allowBackup="false"` plus `data_extraction_rules.xml`) because enrolled profiles
@@ -53,6 +94,7 @@ Clean Architecture with boundaries the build enforces, not just convention.
   │  :core:core-ui       ← Material 3 design system
   │     ↑
   ├─ :core:core-data     ← Room, DataStore, file storage, BCrypt
+  ├─ :core:core-alerting ← alarm tone, haptics, notification channels
   └─ :ml:*               ← on-device inference engines (5 modules)
 ```
 
@@ -66,6 +108,7 @@ writes a deliberately illegal import and asserts it fails:
 | `feature-auth` cannot reach the hasher | `import …core.data.security.PasswordHasher` | Unresolved |
 | `feature-live` cannot reach the embedder | `import …ml.face.embed.FaceEmbedder` | Unresolved |
 | `feature-live` cannot reach the weapon detector | `import …ml.weapon.WeaponDetector` | Unresolved |
+| `feature-live` cannot reach the alarm player | `import …core.alerting.audio.AudioTrackAlarmPlayer` | Unresolved |
 
 `core-model` uses the `securevision.jvm.library` plugin — no Android Gradle Plugin
 at all — so its purity is a compiler guarantee rather than a review convention.
@@ -185,7 +228,6 @@ an app bundle.
 | `securevision.android.library` | SDK levels, Java 17, lint policy, test options |
 | `securevision.android.compose` | Compose compiler, BOM-managed dependencies |
 | `securevision.android.hilt` | KSP + Hilt, `hilt-navigation-compose` where Compose is present |
-| `securevision.android.firebase` | Firebase BOM; applies google-services **only if** `google-services.json` exists |
 | `securevision.android.room` | Room + KSP, schema export |
 | `securevision.jvm.library` | Pure Kotlin/JVM, no AGP |
 
@@ -212,7 +254,7 @@ operator's account and every enrolled profile, none of which exists anywhere els
 | 3 | Offline BCrypt auth, recovery code, session, My Account | ✅ |
 | 4 | CameraX live view; detection, alignment, recognition, overlays, quick enrol | ✅ |
 | 5a | Motion, attribute framework, coarse emotion, snapshots, weapon scaffolding | ✅ |
-| 5b | Alarm engine and notifications | |
+| 5b | Alarm engine, haptics and notifications behind one shared alert gate | ✅ |
 | 6 | Recording with overlays; alerts, history and recordings galleries | |
 | 7 | Settings, retention, polish | |
 

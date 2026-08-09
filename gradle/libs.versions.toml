@@ -10,7 +10,6 @@
 agp = "8.6.1"
 kotlin = "2.0.21"
 ksp = "2.0.21-1.0.28"
-googleServices = "4.4.2"
 javaVersion = "17"
 
 # --- SDK levels ------------------------------------------------------------
@@ -45,9 +44,6 @@ coil = "2.7.0"
 mlkitFaceDetection = "16.1.6"
 tensorflowLite = "2.16.1"
 tensorflowLiteSupport = "0.4.4"
-
-# --- Firebase (retained for later phases; the login account is now offline) --
-firebaseBom = "33.5.1"
 
 # --- Security --------------------------------------------------------------
 # at.favre.lib rather than org.mindrot:jbcrypt, which has had no release since
@@ -130,10 +126,6 @@ tensorflow-lite-gpu-api = { group = "org.tensorflow", name = "tensorflow-lite-gp
 tensorflow-lite-support = { group = "org.tensorflow", name = "tensorflow-lite-support", version.ref = "tensorflowLiteSupport" }
 tensorflow-lite-gpu-delegate-plugin = { group = "org.tensorflow", name = "tensorflow-lite-gpu-delegate-plugin", version.ref = "tensorflowLiteSupport" }
 
-# --- Firebase --------------------------------------------------------------
-firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
-firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
-firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
 
 # --- Security --------------------------------------------------------------
 bcrypt = { group = "at.favre.lib", name = "bcrypt", version.ref = "bcrypt" }
@@ -197,13 +189,11 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
-google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 
 # --- Convention plugins defined in build-logic/ ----------------------------
 securevision-android-application = { id = "securevision.android.application" }
 securevision-android-library = { id = "securevision.android.library" }
 securevision-android-compose = { id = "securevision.android.compose" }
 securevision-android-hilt = { id = "securevision.android.hilt" }
-securevision-android-firebase = { id = "securevision.android.firebase" }
 securevision-android-room = { id = "securevision.android.room" }
 securevision-jvm-library = { id = "securevision.jvm.library" }

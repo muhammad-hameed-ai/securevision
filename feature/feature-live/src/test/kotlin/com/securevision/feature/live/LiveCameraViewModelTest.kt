@@ -1,6 +1,10 @@
 package com.securevision.feature.live
 
 import com.securevision.core.common.dispatcher.DispatcherProvider
+import com.securevision.core.domain.alerting.AlarmPlayer
+import com.securevision.core.domain.alerting.AlertGate
+import com.securevision.core.domain.alerting.AlertNotifier
+import com.securevision.core.domain.alerting.NotificationOutcome
 import com.securevision.core.domain.engine.AttributeAnalysisEngine
 import com.securevision.core.domain.engine.EngineStatus
 import com.securevision.core.domain.engine.EnrolmentCapture
@@ -22,10 +26,9 @@ import com.securevision.core.domain.usecase.live.DetectMotionUseCase
 import com.securevision.core.domain.usecase.live.DetectWeaponsUseCase
 import com.securevision.core.domain.usecase.live.EnrolFaceFromFrameUseCase
 import com.securevision.core.domain.usecase.live.PrepareDetectorsUseCase
+import com.securevision.core.domain.usecase.live.RaiseAlertUseCase
 import com.securevision.core.domain.usecase.live.RecogniseFacesUseCase
-import com.securevision.core.domain.usecase.live.RecordMotionSightingUseCase
-import com.securevision.core.domain.usecase.live.RecordUnknownSightingUseCase
-import com.securevision.core.domain.usecase.live.RecordWeaponSightingUseCase
+import com.securevision.core.domain.usecase.live.SilenceAlarmUseCase
 import com.securevision.core.domain.usecase.profile.GetEnrolledProfilesUseCase
 import com.securevision.core.domain.usecase.settings.ObserveSettingsUseCase
 import com.securevision.core.model.AlertRecord
@@ -41,6 +44,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.verify
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
@@ -79,6 +83,11 @@ class LiveCameraViewModelTest {
     private val motionEngine = mockk<MotionDetectionEngine>(relaxed = true)
     private val attributeEngine = mockk<AttributeAnalysisEngine>(relaxed = true)
     private val snapshotStore = mockk<SnapshotStore>(relaxed = true)
+    private val alarmPlayer = mockk<AlarmPlayer>(relaxed = true)
+    private val notifier = mockk<AlertNotifier>(relaxed = true)
+
+    /** The real gate, not a mock: its behaviour is what these tests exercise. */
+    private val gate = AlertGate()
     private val alertRepository = mockk<AlertRepository>(relaxed = true)
     private val eventRepository = mockk<DetectionEventRepository>(relaxed = true)
     private val profileRepository = mockk<EnrolledProfileRepository>(relaxed = true)
@@ -102,6 +111,8 @@ class LiveCameraViewModelTest {
         coEvery { weaponEngine.detect(any(), any()) } returns emptyList()
         coEvery { motionEngine.detect(any(), any()) } returns MotionResult.NONE
         coEvery { attributeEngine.prepare() } returns AttributeAvailability()
+        coEvery { notifier.post(any(), any()) } returns NotificationOutcome.POSTED
+        every { alarmPlayer.isSounding } returns false
     }
 
     @After
@@ -307,6 +318,46 @@ class LiveCameraViewModelTest {
     }
 
     @Test
+    fun `a critical alert offers the silence control`() = runTest {
+        every { alarmPlayer.isSounding } returns true
+        stubWeapons(weapon(type = "pistol"))
+        val viewModel = viewModel()
+
+        viewModel.onFrame(frameBitmap, isFrontCamera = false)
+
+        assertTrue((viewModel.uiState.value as LiveUiState.Ready).isAlarmSounding)
+    }
+
+    @Test
+    fun `silencing stops the tone without touching the record`() = runTest {
+        every { alarmPlayer.isSounding } returns true
+        stubWeapons(weapon(type = "pistol"))
+        val viewModel = viewModel()
+        viewModel.onFrame(frameBitmap, isFrontCamera = false)
+
+        viewModel.silenceAlarm()
+
+        verify(exactly = 1) { alarmPlayer.silence() }
+        assertFalse((viewModel.uiState.value as LiveUiState.Ready).isAlarmSounding)
+        // Silencing means "I have heard it", not "that did not happen".
+        coVerify(exactly = 1) { alertRepository.save(any()) }
+    }
+
+    @Test
+    fun `a refused notification permission is explained, not hidden`() = runTest {
+        coEvery { notifier.post(any(), any()) } returns NotificationOutcome.PERMISSION_DENIED
+        stubFaces(face(trackingId = 7, status = MatchStatus.UNKNOWN))
+        val viewModel = viewModel()
+
+        viewModel.onFrame(frameBitmap, isFrontCamera = false)
+
+        val state = viewModel.uiState.value as LiveUiState.Ready
+        assertTrue(state.notificationsBlocked)
+        // The alert was still recorded; only the shade missed out.
+        coVerify(exactly = 1) { alertRepository.save(any()) }
+    }
+
+    @Test
     fun `enrolling with no captured frame reports no face rather than crashing`() = runTest {
         val viewModel = viewModel()
 
@@ -361,21 +412,17 @@ class LiveCameraViewModelTest {
             repository = profileRepository,
             dispatcherProvider = dispatchers,
         ),
-        recordUnknownSighting = RecordUnknownSightingUseCase(
+        raiseAlert = RaiseAlertUseCase(
+            gate = gate,
             alertRepository = alertRepository,
             detectionEventRepository = eventRepository,
+            settingsRepository = settingsRepository,
+            alarmPlayer = alarmPlayer,
+            notifier = notifier,
             dispatcherProvider = dispatchers,
         ),
-        recordWeaponSighting = RecordWeaponSightingUseCase(
-            alertRepository = alertRepository,
-            detectionEventRepository = eventRepository,
-            dispatcherProvider = dispatchers,
-        ),
-        recordMotionSighting = RecordMotionSightingUseCase(
-            alertRepository = alertRepository,
-            detectionEventRepository = eventRepository,
-            dispatcherProvider = dispatchers,
-        ),
+        silenceAlarm = SilenceAlarmUseCase(alarmPlayer),
+        alertGate = gate,
         getEnrolledProfiles = GetEnrolledProfilesUseCase(profileRepository, dispatchers),
         getEnrolledProfileCount = GetEnrolledProfileCountUseCase(profileRepository, dispatchers),
         observeSettings = ObserveSettingsUseCase(settingsRepository, dispatchers),

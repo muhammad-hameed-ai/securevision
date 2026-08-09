@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.securevision.android.application)
     alias(libs.plugins.securevision.android.compose)
     alias(libs.plugins.securevision.android.hilt)
-    alias(libs.plugins.securevision.android.firebase)
 }
 
 android {
@@ -23,6 +22,7 @@ dependencies {
     // The only module that sees both the domain contracts and their
     // implementations, which is what closes the Hilt graph here and nowhere else.
     implementation(projects.core.coreData)
+    implementation(projects.core.coreAlerting)
 
     // --- Feature (presentation) ---------------------------------------------
     implementation(projects.feature.featureAuth)

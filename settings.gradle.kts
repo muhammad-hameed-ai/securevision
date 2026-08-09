@@ -30,11 +30,12 @@ rootProject.name = "SecureVision"
 // --- Application entry point ------------------------------------------------
 include(":app")
 
-// --- Core: shared model, utilities, domain contracts, data, design system ----
+// --- Core: shared model, utilities, domain contracts, data, alerting, design -
 include(":core:core-model")
 include(":core:core-common")
 include(":core:core-domain")
 include(":core:core-data")
+include(":core:core-alerting")
 include(":core:core-ui")
 
 // --- Feature: one module per screen area (presentation layer) ---------------

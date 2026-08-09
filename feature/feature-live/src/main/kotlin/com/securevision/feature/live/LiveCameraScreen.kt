@@ -37,10 +37,12 @@ import com.securevision.core.ui.theme.SecureVisionDimens
 import com.securevision.core.ui.theme.SecureVisionTheme
 import com.securevision.feature.live.camera.CameraPermissionGate
 import com.securevision.feature.live.camera.CameraPreview
+import com.securevision.feature.live.camera.NotificationPermissionRequest
 import com.securevision.feature.live.component.EnrolFaceDialog
 import com.securevision.feature.live.component.LiveHud
 import com.securevision.feature.live.component.MotionIndicator
 import com.securevision.feature.live.component.SessionStatsBar
+import com.securevision.feature.live.component.SilenceAlarmButton
 import com.securevision.feature.live.overlay.DetectionOverlay
 import com.securevision.feature.live.overlay.OverlayTransform
 
@@ -52,6 +54,7 @@ import com.securevision.feature.live.overlay.OverlayTransform
  * @param onFrame Called with each analysed frame.
  * @param onFlipCamera Switches lens.
  * @param onEnrol Enrols the face currently in frame.
+ * @param onSilenceAlarm Stops a sounding critical alarm.
  * @param onEnrolmentEventConsumed Clears the enrolment outcome once shown.
  * @param modifier Modifier applied to the screen.
  */
@@ -62,6 +65,7 @@ fun LiveCameraScreen(
     onFrame: (android.graphics.Bitmap, Boolean) -> Unit,
     onFlipCamera: () -> Unit,
     onEnrol: (name: String, age: Int) -> Unit,
+    onSilenceAlarm: () -> Unit,
     onEnrolmentEventConsumed: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -81,12 +85,17 @@ fun LiveCameraScreen(
         )
 
         is LiveUiState.Ready -> CameraPermissionGate(modifier = modifier) {
+            // Asked inside the camera gate, so the two system dialogs appear one
+            // after the other rather than stacked on top of each other.
+            NotificationPermissionRequest()
+
             ReadyContent(
                 state = uiState,
                 enrolmentEvent = enrolmentEvent,
                 onFrame = onFrame,
                 onFlipCamera = onFlipCamera,
                 onEnrol = onEnrol,
+                onSilenceAlarm = onSilenceAlarm,
                 onEnrolmentEventConsumed = onEnrolmentEventConsumed,
             )
         }
@@ -100,6 +109,7 @@ private fun ReadyContent(
     onFrame: (android.graphics.Bitmap, Boolean) -> Unit,
     onFlipCamera: () -> Unit,
     onEnrol: (name: String, age: Int) -> Unit,
+    onSilenceAlarm: () -> Unit,
     onEnrolmentEventConsumed: () -> Unit,
 ) {
     var viewSize by remember { mutableStateOf(IntPair(0, 0)) }
@@ -159,6 +169,11 @@ private fun ReadyContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(SecureVisionDimens.spacingSmall),
         ) {
+            SilenceAlarmButton(
+                isSounding = state.isAlarmSounding,
+                onSilence = onSilenceAlarm,
+            )
+
             ExtendedFloatingActionButton(
                 onClick = { showEnrolDialog = true },
                 containerColor = MaterialTheme.colorScheme.primary,
@@ -202,6 +217,11 @@ private fun StatusBanner(state: LiveUiState.Ready) {
     val messages = listOfNotNull(
         faceStatusMessage(state),
         weaponStatusMessage(state.weaponEngineStatus),
+        // Stated plainly rather than hidden: the alerts are still being recorded,
+        // and a user who refused the permission should know the phone staying
+        // quiet is their setting rather than the app failing.
+        stringResource(R.string.live_notifications_blocked)
+            .takeIf { state.notificationsBlocked },
     )
     if (messages.isEmpty()) return
 

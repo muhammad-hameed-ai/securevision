@@ -1,14 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!--
-      Declared now, used later.
-      INTERNET  — Firebase Auth and Firestore for the app-login account (Phase 3).
-                  No other data is permitted to use it: all AI/ML is on-device.
-      CAMERA    — the live detection screen (Phase 4).
+      Three permissions, and no more. There is deliberately no INTERNET
+      permission: authentication is BCrypt against a local Room table and every
+      model runs on-device, so the app is incapable of sending anything anywhere.
+      That is enforced here rather than merely promised in the README.
+
+      CAMERA              — the live detection screen (Phase 4).
+      VIBRATE             — haptic half of an alert (Phase 5b). Install-time.
+      POST_NOTIFICATIONS  — alert notifications (Phase 5b). Runtime-requested from
+                            API 33; refusing it must leave the app fully working,
+                            with alerts still recorded and shown in-app.
+
+      VIBRATE and POST_NOTIFICATIONS are also declared by :core:core-alerting,
+      which owns the calls. Listed again here as the audit surface: one file that
+      answers "what can this app do?".
     -->
-    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!--
+      Permissions our own dependencies add, stripped back out.
+
+      INTERNET and ACCESS_NETWORK_STATE arrive from com.google.android.datatransport,
+      which ML Kit pulls in to upload usage telemetry. Face detection itself runs
+      from a bundled model and needs no network, so removing these enforces the
+      product's central promise rather than merely asserting it. The transport
+      library handles the resulting failures internally; it may log warnings.
+
+      The three below are not requested by anything. They are *implied*: the
+      merger sees that org.tensorflow.lite.gpu.api ships a manifest with no
+      targetSdkVersion, assumes API 3, and grants the legacy defaults an API-3 app
+      would have had. Nothing in TFLite's GPU delegate reads the phone state or
+      external storage.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
 
     <uses-feature
         android:name="android.hardware.camera.any"

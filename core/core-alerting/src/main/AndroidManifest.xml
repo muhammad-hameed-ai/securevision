@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      Declared here, in the module that actually calls the APIs, rather than only
+      in :app. A library that needs a permission should say so: the merger unions
+      it into any application that depends on this module, so nobody has to know
+      to add it by hand, and lint can verify the call sites against it.
+
+      VIBRATE             — AlertVibrator. Install-time, no runtime request.
+      POST_NOTIFICATIONS  — AlertNotifierImpl. Runtime-requested from API 33;
+                            refusal is reported as PERMISSION_DENIED and the
+                            alert is still recorded.
+    -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+</manifest>

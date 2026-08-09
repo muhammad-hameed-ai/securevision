@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.securevision.android.library)
     alias(libs.plugins.securevision.android.hilt)
     alias(libs.plugins.securevision.android.room)
-    alias(libs.plugins.securevision.android.firebase)
 }
 
 android {
@@ -27,6 +26,6 @@ dependencies {
 }
 
 /*
- * Phase 3 adds the Firebase Auth and Firestore sources for the app-login account
- * — the only data in the project that leaves the device.
+ * No network dependency of any kind. Authentication is BCrypt against a local
+ * Room table, so every byte this module handles stays on the device.
  */

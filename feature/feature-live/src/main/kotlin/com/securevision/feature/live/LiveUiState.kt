@@ -30,6 +30,11 @@ sealed interface LiveUiState {
      * @property faceEngineStatus Whether face recognition is available.
      * @property weaponEngineStatus Whether weapon detection is available.
      * @property attributesEnabled Whether attribute analysis is switched on.
+     * @property isAlarmSounding Whether a repeating critical alarm is playing, in
+     *   which case the screen offers a Silence control.
+     * @property notificationsBlocked Whether the last alert could not reach the
+     *   notification shade because the system permission is refused. Shown as an
+     *   explanation, never as a blocker — the alert itself was still recorded.
      * @property analysisWidth Width of the upright analysis frame, for the overlay.
      * @property analysisHeight Height of the upright analysis frame, for the overlay.
      * @property isFrontCamera Which camera is active; the overlay mirrors for it.
@@ -45,6 +50,8 @@ sealed interface LiveUiState {
         val faceEngineStatus: EngineStatus = EngineStatus.Initialising,
         val weaponEngineStatus: EngineStatus = EngineStatus.Initialising,
         val attributesEnabled: Boolean = false,
+        val isAlarmSounding: Boolean = false,
+        val notificationsBlocked: Boolean = false,
         val analysisWidth: Int = 0,
         val analysisHeight: Int = 0,
         val isFrontCamera: Boolean = false,

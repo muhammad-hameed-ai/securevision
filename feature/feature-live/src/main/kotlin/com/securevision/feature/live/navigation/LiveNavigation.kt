@@ -27,6 +27,7 @@ fun NavGraphBuilder.liveScreen() {
             onFrame = viewModel::onFrame,
             onFlipCamera = viewModel::flipCamera,
             onEnrol = viewModel::enrolCurrentFace,
+            onSilenceAlarm = viewModel::silenceAlarm,
             onEnrolmentEventConsumed = viewModel::consumeEnrolmentEvent,
         )
     }
