@@ -176,7 +176,7 @@
       <div class="card"><div class="ico">🟠</div><h3>Weapon Detection</h3><p>A YOLOv8 model — trained from scratch on a public weapons dataset — flags weapons in frame and raises a critical alarm.</p></div>
       <div class="card"><div class="ico">🔴</div><h3>Unknown Alerts</h3><p>Any unenrolled face is flagged, logged, and alarmed, with an automatically captured snapshot attached to the alert.</p></div>
       <div class="card"><div class="ico">🟡</div><h3>Motion Sensing</h3><p>Frame-differencing motion detection with intensity metering and smart debouncing to avoid alert storms.</p></div>
-      <div class="card"><div class="ico">🔔</div><h3>Graded Alarms</h3><p>Two-tier alarm engine — a weapon alarm has strict priority and can never be silenced by a lesser alert.</p></div>
+      <div class="card"><div class="ico">🔔</div><h3>Graded Alarms</h3><p>Three severity tiers — low, medium and critical. A weapon alarm has strict priority and can never be silenced by a lesser alert.</p></div>
       <div class="card"><div class="ico">🎥</div><h3>Recording & Torch</h3><p>Record the live feed to internal storage with an in-app gallery, plus an on-device flashlight for low-light monitoring.</p></div>
     </div>
   </div>
@@ -185,10 +185,10 @@
 <section>
   <div class="wrap">
     <div class="stats">
-      <div class="stat"><div class="num">98%</div><div class="lbl">On-device recognition</div></div>
+      <div class="stat"><div class="num">512</div><div class="lbl">Embedding dimensions</div></div>
       <div class="stat"><div class="num">397</div><div class="lbl">Automated tests</div></div>
       <div class="stat"><div class="num">3</div><div class="lbl">Permissions only</div></div>
-      <div class="stat"><div class="num">0</div><div class="lbl">Cloud dependencies</div></div>
+      <div class="stat"><div class="num">0</div><div class="lbl">Network permissions</div></div>
     </div>
   </div>
 </section>
@@ -251,7 +251,7 @@
       <div class="tl"><div class="ph">1</div><div><h4>Foundation</h4><p>Multi-module architecture, domain model, design system, navigation shell.</p></div></div>
       <div class="tl"><div class="ph">2</div><div><h4>Data Layer</h4><p>Room database, DataStore settings, internal file storage, live dashboard.</p></div></div>
       <div class="tl"><div class="ph">3</div><div><h4>Authentication</h4><p>Offline operator login with BCrypt hashing and a one-time recovery code.</p></div></div>
-      <div class="tl"><div class="ph">4</div><div><h4>Face Recognition</h4><p>Live camera recognition with mandatory alignment — 98% accuracy on-device.</p></div></div>
+      <div class="tl"><div class="ph">4</div><div><h4>Face Recognition</h4><p>Live camera recognition with mandatory 5-point alignment before every embedding.</p></div></div>
       <div class="tl"><div class="ph">5</div><div><h4>Alarms & Snapshots</h4><p>Motion, attributes, snapshot capture, dual-level alarm engine, notifications.</p></div></div>
       <div class="tl"><div class="ph">6</div><div><h4>Galleries</h4><p>Polished profiles, alerts with snapshots, and a recordings gallery.</p></div></div>
       <div class="tl"><div class="ph">7</div><div><h4>Weapons & Polish</h4><p>Custom weapon detection, full settings, performance tuning, release.</p></div></div>
