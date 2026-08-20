@@ -15,8 +15,12 @@ package com.securevision.core.model
  * @property embedding L2-normalised embedding of the **aligned** face crop.
  *   Cosine similarity against this vector is what produces a match. Its length is
  *   whatever the model that produced it emits — see [embeddingSize].
+ * @property accessLevel How the operator has classified this person. Display
+ *   only — recognition treats every enrolled person identically.
  * @property isWatchlisted Whether a sighting of this person should be escalated
- *   rather than treated as a routine known-person event.
+ *   rather than treated as a routine known-person event. Orthogonal to
+ *   [accessLevel]: a VIP and a restricted person can both be watchlisted, for
+ *   opposite reasons.
  * @property createdAt Enrolment time, epoch milliseconds UTC.
  */
 class EnrolledProfile(
@@ -25,6 +29,7 @@ class EnrolledProfile(
     val age: Int,
     val photoUri: String,
     val embedding: FloatArray,
+    val accessLevel: AccessLevel = AccessLevel.DEFAULT,
     val isWatchlisted: Boolean,
     val createdAt: Long,
 ) {
@@ -55,6 +60,7 @@ class EnrolledProfile(
             age == other.age &&
             photoUri == other.photoUri &&
             embedding.contentEquals(other.embedding) &&
+            accessLevel == other.accessLevel &&
             isWatchlisted == other.isWatchlisted &&
             createdAt == other.createdAt
     }
@@ -66,6 +72,7 @@ class EnrolledProfile(
         result = 31 * result + age
         result = 31 * result + photoUri.hashCode()
         result = 31 * result + embedding.contentHashCode()
+        result = 31 * result + accessLevel.hashCode()
         result = 31 * result + isWatchlisted.hashCode()
         result = 31 * result + createdAt.hashCode()
         return result
@@ -74,7 +81,8 @@ class EnrolledProfile(
     /** Deliberately omits the raw embedding — 512 floats in a log line help nobody. */
     override fun toString(): String =
         "EnrolledProfile(id=$id, name=$name, age=$age, photoUri=$photoUri, " +
-            "embedding=${embedding.size} dims, isWatchlisted=$isWatchlisted, createdAt=$createdAt)"
+            "embedding=${embedding.size} dims, accessLevel=$accessLevel, " +
+            "isWatchlisted=$isWatchlisted, createdAt=$createdAt)"
 
     /**
      * Returns a copy with the given fields replaced, matching the ergonomics of a
@@ -86,6 +94,7 @@ class EnrolledProfile(
         age: Int = this.age,
         photoUri: String = this.photoUri,
         embedding: FloatArray = this.embedding,
+        accessLevel: AccessLevel = this.accessLevel,
         isWatchlisted: Boolean = this.isWatchlisted,
         createdAt: Long = this.createdAt,
     ): EnrolledProfile = EnrolledProfile(
@@ -94,6 +103,7 @@ class EnrolledProfile(
         age = age,
         photoUri = photoUri,
         embedding = embedding,
+        accessLevel = accessLevel,
         isWatchlisted = isWatchlisted,
         createdAt = createdAt,
     )

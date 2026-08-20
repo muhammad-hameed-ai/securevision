@@ -28,8 +28,9 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val darkMode by viewModel.darkMode.collectAsStateWithLifecycle()
 
-            SecureVisionTheme {
+            SecureVisionTheme(darkTheme = darkMode) {
                 SecureVisionAppShell(
                     uiState = uiState,
                     onLogout = viewModel::logout,

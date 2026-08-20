@@ -42,6 +42,15 @@ class WeaponDetector @Inject constructor(
     private var interpreter: Interpreter? = null
     private var delegate: Delegate? = null
     private var inputSize: Int = 0
+
+    /**
+     * Whether the loaded model wants NCHW rather than NHWC.
+     *
+     * Read from the input tensor at load, never assumed: a PyTorch-exported
+     * YOLOv8 is channels-first and a TFLite-converted one is channels-last, and
+     * feeding one the other's byte order fails silently.
+     */
+    private var inputIsChannelsFirst: Boolean = false
     private var outputShape: IntArray = IntArray(0)
 
     /** Current readiness. */
@@ -103,7 +112,23 @@ class WeaponDetector @Inject constructor(
 
         interpreter = created
         delegate = createdDelegate
-        inputSize = input.getOrElse(1) { DEFAULT_INPUT_SIZE }
+
+        // Detected, not assumed. A YOLOv8 export straight from PyTorch is
+        // channels-first [1,3,640,640]; a TFLite-converted one is usually
+        // channels-last [1,640,640,3]. Reading the size off a fixed axis picks up
+        // the channel count (3) from an NCHW model and tries to letterbox to 3×3.
+        inputIsChannelsFirst = input.getOrNull(1) == CHANNELS && input.size == INPUT_RANK
+        inputSize = if (inputIsChannelsFirst) {
+            input.getOrElse(2) { DEFAULT_INPUT_SIZE }
+        } else {
+            input.getOrElse(1) { DEFAULT_INPUT_SIZE }
+        }
+
+        Log.i(
+            TAG,
+            "  input layout = ${if (inputIsChannelsFirst) "NCHW" else "NHWC"}, size = $inputSize",
+        )
+
         outputShape = output
         status = EngineStatus.Ready(
             embeddingDimensions = layout.classCount,
@@ -189,15 +214,46 @@ class WeaponDetector @Inject constructor(
         canvasBitmap.recycle()
 
         // YOLO expects 0..1, not the -1..1 FaceNet uses. Getting this wrong does
-        // not throw; it just makes the detector see an image it was never trained on.
-        for (pixel in pixels) {
-            buffer.putFloat(((pixel shr 16) and 0xFF) / MAX_CHANNEL)
-            buffer.putFloat(((pixel shr 8) and 0xFF) / MAX_CHANNEL)
-            buffer.putFloat((pixel and 0xFF) / MAX_CHANNEL)
-        }
+        // not throw; it just makes the detector see an image it was never trained
+        // on. The same is true of channel order — feeding interleaved pixels to a
+        // channels-first model produces silence, not an error.
+        writePixels(pixels, buffer)
 
         buffer.rewind()
         return buffer
+    }
+
+    /**
+     * Writes normalised pixels in whichever channel order the model expects.
+     *
+     * NHWC interleaves per pixel — R,G,B,R,G,B — while NCHW writes three whole
+     * planes: every red value, then every green, then every blue. Visiting the
+     * pixel array three times for NCHW is deliberate; building three float arrays
+     * first would allocate 4.9 MB per frame at 640×640, on a path that runs
+     * several times a second.
+     *
+     * @param pixels ARGB pixels of the letterboxed frame.
+     * @param buffer Destination, positioned at zero.
+     */
+    private fun writePixels(pixels: IntArray, buffer: ByteBuffer) {
+        if (!inputIsChannelsFirst) {
+            for (pixel in pixels) {
+                buffer.putFloat(((pixel shr RED_SHIFT) and CHANNEL_MASK) / MAX_CHANNEL)
+                buffer.putFloat(((pixel shr GREEN_SHIFT) and CHANNEL_MASK) / MAX_CHANNEL)
+                buffer.putFloat((pixel and CHANNEL_MASK) / MAX_CHANNEL)
+            }
+            return
+        }
+
+        for (pixel in pixels) {
+            buffer.putFloat(((pixel shr RED_SHIFT) and CHANNEL_MASK) / MAX_CHANNEL)
+        }
+        for (pixel in pixels) {
+            buffer.putFloat(((pixel shr GREEN_SHIFT) and CHANNEL_MASK) / MAX_CHANNEL)
+        }
+        for (pixel in pixels) {
+            buffer.putFloat((pixel and CHANNEL_MASK) / MAX_CHANNEL)
+        }
     }
 
     private fun createInterpreter(
@@ -249,6 +305,13 @@ class WeaponDetector @Inject constructor(
         const val CPU_THREADS = 4
         const val DEFAULT_INPUT_SIZE = 640
         const val MAX_CHANNEL = 255f
+
+        /** `[batch, …, …, …]` — any input tensor this detector understands. */
+        const val INPUT_RANK = 4
+
+        const val RED_SHIFT = 16
+        const val GREEN_SHIFT = 8
+        const val CHANNEL_MASK = 0xFF
 
         /** Neutral grey padding — black or white would read as a strong edge. */
         val PAD_COLOUR = Color.rgb(114, 114, 114)

@@ -21,6 +21,17 @@ class MultiFrameVoter @Inject constructor() {
 
     private val histories = mutableMapOf<Int, ArrayDeque<String?>>()
 
+    /** The last confirmed identity per tracked face, for the sticky window. */
+    private val lastKnown = mutableMapOf<Int, RecentIdentity>()
+
+    /**
+     * An identity this tracked face held very recently.
+     *
+     * @property profileId Who it was.
+     * @property atMillis When it was last confirmed.
+     */
+    private data class RecentIdentity(val profileId: String, val atMillis: Long)
+
     /**
      * Records one frame's verdict and returns the committed one.
      *
@@ -34,6 +45,7 @@ class MultiFrameVoter @Inject constructor() {
         trackingId: Int,
         matchedProfileId: String?,
         requiredAgreements: Int,
+        nowMillis: Long = System.currentTimeMillis(),
     ): VoteResult {
         val history = histories.getOrPut(trackingId) { ArrayDeque(WINDOW_SIZE) }
 
@@ -51,11 +63,28 @@ class MultiFrameVoter @Inject constructor() {
             .maxByOrNull { (_, count) -> count }
 
         if (winner != null && winner.value >= requiredAgreements) {
+            lastKnown[trackingId] = RecentIdentity(winner.key, nowMillis)
             return VoteResult.Known(profileId = winner.key, agreeingFrames = winner.value)
         }
 
         val unmatchedFrames = history.count { it == null }
         if (unmatchedFrames >= requiredAgreements) {
+            // Hold a recently confirmed identity through a brief dropout — a hand
+            // passing over the face, a blink, a laugh, one bad frame. Without
+            // this the name flickers away and back constantly in normal use.
+            //
+            // Strictly time-bounded, and that bound is a security property rather
+            // than a tuning choice: someone stepping into frame where a known
+            // person just stood must never inherit their name.
+            val recent = lastKnown[trackingId]
+            if (recent != null && nowMillis - recent.atMillis <= STICKY_WINDOW_MILLIS) {
+                return VoteResult.Known(
+                    profileId = recent.profileId,
+                    agreeingFrames = requiredAgreements,
+                )
+            }
+
+            lastKnown.remove(trackingId)
             return VoteResult.Unknown(agreeingFrames = unmatchedFrames)
         }
 
@@ -71,16 +100,27 @@ class MultiFrameVoter @Inject constructor() {
      */
     fun retainOnly(activeTrackingIds: Set<Int>) {
         histories.keys.retainAll(activeTrackingIds)
+        lastKnown.keys.retainAll(activeTrackingIds)
     }
 
     /** Clears all history, e.g. when the camera flips and tracking ids restart. */
     fun reset() {
         histories.clear()
+        lastKnown.clear()
     }
 
     companion object {
         /** How many recent frames are considered. */
         const val WINDOW_SIZE: Int = 4
+
+        /**
+         * How long a confirmed identity survives frames that fail to match.
+         *
+         * Long enough to ride out a hand passing over the face or a laugh, short
+         * enough that it cannot outlive the person leaving frame. Roughly four
+         * analysis cycles at the 350 ms throttle.
+         */
+        const val STICKY_WINDOW_MILLIS: Long = 1_500L
     }
 }
 

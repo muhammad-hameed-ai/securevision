@@ -40,7 +40,27 @@ class FaceQualityGateTest {
 
     @Test
     fun `accepts a face exactly at the minimum width`() {
-        assertEquals(FaceQuality.Acceptable, gate.assess(detection(width = 0.10f)))
+        // Reads the constant rather than repeating it. The literal 0.10 here went
+        // stale the moment the floor was raised to reject hands and object
+        // fragments, and a boundary test that needs editing whenever the boundary
+        // moves is testing the number, not the behaviour.
+        //
+        // Nudged clear of the boundary because the fixture derives the box as
+        // `left + width`, and that round-trip lands a fraction under the floor —
+        // an exactly-on-the-line assertion would be testing float representation
+        // rather than the gate.
+        assertEquals(
+            FaceQuality.Acceptable,
+            gate.assess(detection(width = FaceQualityGate.MIN_RELATIVE_WIDTH + EPSILON)),
+        )
+    }
+
+    @Test
+    fun `rejects a face just below the minimum width`() {
+        assertReason(
+            gate.assess(detection(width = FaceQualityGate.MIN_RELATIVE_WIDTH - EPSILON)),
+            FaceQuality.Reason.TOO_SMALL,
+        )
     }
 
     @Test
@@ -57,13 +77,27 @@ class FaceQualityGateTest {
 
     @Test
     fun `rejects a face tilted beyond the roll limit`() {
-        assertReason(gate.assess(detection(roll = 31f)), FaceQuality.Reason.TOO_TILTED)
-        assertReason(gate.assess(detection(roll = -31f)), FaceQuality.Reason.TOO_TILTED)
+        // Reads the constant. The literal 31 went stale when the limit was raised
+        // to stop landscape faces being rejected as tilted.
+        val beyond = FaceQualityGate.MAX_ROLL_DEGREES + 1f
+
+        assertReason(gate.assess(detection(roll = beyond)), FaceQuality.Reason.TOO_TILTED)
+        assertReason(gate.assess(detection(roll = -beyond)), FaceQuality.Reason.TOO_TILTED)
     }
 
     @Test
     fun `accepts a face exactly at the roll limit`() {
-        assertEquals(FaceQuality.Acceptable, gate.assess(detection(roll = 30f)))
+        assertEquals(
+            FaceQuality.Acceptable,
+            gate.assess(detection(roll = FaceQualityGate.MAX_ROLL_DEGREES)),
+        )
+    }
+
+    @Test
+    fun `tolerates the tilt introduced by rotating the phone`() {
+        // A standing person's apparent roll shifts when the device turns. 40
+        // degrees is a realistic landscape reading and must survive the gate.
+        assertEquals(FaceQuality.Acceptable, gate.assess(detection(roll = 40f)))
     }
 
     @Test
@@ -80,6 +114,9 @@ class FaceQualityGateTest {
         assertTrue("expected a rejection but was $quality", quality is FaceQuality.Rejected)
         assertEquals(expected, (quality as FaceQuality.Rejected).reason)
     }
+
+    /** Clear of the float round-trip in the fixture's left + width arithmetic. */
+    private val EPSILON = 0.005f
 
     private fun detection(
         width: Float = 0.30f,

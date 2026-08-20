@@ -19,4 +19,7 @@ class ProfilePhotoStoreImpl @Inject constructor(
 
     override suspend fun saveProfilePhoto(bitmap: Bitmap): String =
         storageManager.saveProfilePhoto(bitmap)
+
+    override suspend fun deleteProfilePhoto(uri: String): Boolean =
+        storageManager.deleteFile(uri)
 }

@@ -22,7 +22,7 @@ class WeaponOutputParserTest {
         val anchors = 3
         val output = FloatArray(channels * anchors)
 
-        // Anchor 1: a knife (class index 1) at the centre, half size, score 0.9.
+        // Anchor 1: a weapon (the only class) at the centre, half size, score 0.9.
         fun set(channel: Int, anchor: Int, value: Float) {
             output[channel * anchors + anchor] = value
         }
@@ -30,7 +30,7 @@ class WeaponOutputParserTest {
         set(1, 1, 0.5f)
         set(2, 1, 0.4f)
         set(3, 1, 0.4f)
-        set(BOX_VALUES + 1, 1, 0.9f)
+        set(BOX_VALUES + 0, 1, 0.9f)
 
         val parsed = WeaponOutputParser.parse(
             output = output,
@@ -40,7 +40,7 @@ class WeaponOutputParserTest {
         )
 
         assertEquals(1, parsed.size)
-        assertEquals("knife", parsed.first().weaponType)
+        assertEquals("Weapon", parsed.first().weaponType)
         assertEquals(0.9f, parsed.first().confidence, TOLERANCE)
         assertEquals(0.3f, parsed.first().boundingBox.left, TOLERANCE)
         assertEquals(0.7f, parsed.first().boundingBox.right, TOLERANCE)
@@ -58,7 +58,7 @@ class WeaponOutputParserTest {
         set(1, 1, 0.5f)
         set(1, 2, 0.4f)
         set(1, 3, 0.4f)
-        set(1, BOX_VALUES + 1, 0.9f)
+        set(1, BOX_VALUES + 0, 0.9f)
 
         val parsed = WeaponOutputParser.parse(
             output = output,
@@ -68,7 +68,7 @@ class WeaponOutputParserTest {
         )
 
         assertEquals(1, parsed.size)
-        assertEquals("knife", parsed.first().weaponType)
+        assertEquals("Weapon", parsed.first().weaponType)
         assertEquals(0.3f, parsed.first().boundingBox.left, TOLERANCE)
     }
 
@@ -93,15 +93,19 @@ class WeaponOutputParserTest {
     }
 
     @Test
-    fun `picks the highest scoring class per anchor`() {
+    fun `the score comes from the class channel, not a box value`() {
+        // Was "picks the highest scoring class per anchor", which the shipped
+        // single-class export makes meaningless — there is no competition. What
+        // still matters, and is easy to get wrong by an off-by-one, is that the
+        // confidence is read from channel 4 and not from one of the four box
+        // values sitting in front of it.
         val anchors = 1
         val output = FloatArray(channels * anchors)
         output[0] = 0.5f
         output[1] = 0.5f
         output[2] = 0.2f
         output[3] = 0.2f
-        output[BOX_VALUES + 0] = 0.55f
-        output[BOX_VALUES + 3] = 0.88f
+        output[BOX_VALUES + 0] = 0.88f
 
         val parsed = WeaponOutputParser.parse(
             output = output,
@@ -110,7 +114,7 @@ class WeaponOutputParserTest {
             inputSize = 640,
         )
 
-        assertEquals("rifle", parsed.first().weaponType)
+        assertEquals("Weapon", parsed.first().weaponType)
         assertEquals(0.88f, parsed.first().confidence, TOLERANCE)
     }
 
@@ -123,7 +127,7 @@ class WeaponOutputParserTest {
         output[1] = 320f
         output[2] = 256f
         output[3] = 256f
-        output[BOX_VALUES + 1] = 0.9f
+        output[BOX_VALUES + 0] = 0.9f
 
         val parsed = WeaponOutputParser.parse(
             output = output,
@@ -173,7 +177,7 @@ class WeaponOutputParserTest {
         output[1] = 0.05f
         output[2] = 0.4f
         output[3] = 0.4f
-        output[BOX_VALUES + 1] = 0.9f
+        output[BOX_VALUES + 0] = 0.9f
 
         val parsed = WeaponOutputParser.parse(
             output = output,

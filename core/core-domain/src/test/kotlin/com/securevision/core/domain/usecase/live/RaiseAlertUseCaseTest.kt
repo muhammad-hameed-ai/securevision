@@ -56,7 +56,7 @@ class RaiseAlertUseCaseTest {
     fun setUp() {
         every { settingsRepository.settingsFlow } returns flowOf(AppSettings())
         every { alarmPlayer.isSounding } returns false
-        coEvery { notifier.post(any(), any()) } returns NotificationOutcome.POSTED
+        coEvery { notifier.post(any()) } returns NotificationOutcome.POSTED
     }
 
     @Test
@@ -67,7 +67,7 @@ class RaiseAlertUseCaseTest {
         coVerify(exactly = 1) { alertRepository.save(any()) }
         coVerify(exactly = 1) { eventRepository.save(any()) }
         coVerify(exactly = 1) { alarmPlayer.play(Severity.CRITICAL, true, true) }
-        coVerify(exactly = 1) { notifier.post(any(), "pistol") }
+        coVerify(exactly = 1) { notifier.post(any()) }
     }
 
     @Test
@@ -82,12 +82,12 @@ class RaiseAlertUseCaseTest {
         // — that is the whole point of a single gate.
         coVerify(exactly = 1) { alertRepository.save(any()) }
         coVerify(exactly = 1) { alarmPlayer.play(any(), any(), any()) }
-        coVerify(exactly = 1) { notifier.post(any(), any()) }
+        coVerify(exactly = 1) { notifier.post(any()) }
     }
 
     @Test
     fun `the record survives a refused notification permission`() = runTest {
-        coEvery { notifier.post(any(), any()) } returns NotificationOutcome.PERMISSION_DENIED
+        coEvery { notifier.post(any()) } returns NotificationOutcome.PERMISSION_DENIED
 
         val outcome = useCase()(weaponRequest()).getOrNull()
 
@@ -127,7 +127,7 @@ class RaiseAlertUseCaseTest {
 
         useCase()(weaponRequest())
 
-        coVerify(exactly = 0) { notifier.post(any(), any()) }
+        coVerify(exactly = 0) { notifier.post(any()) }
         // Still recorded: the toggle silences the phone, not the audit trail.
         coVerify(exactly = 1) { alertRepository.save(any()) }
     }

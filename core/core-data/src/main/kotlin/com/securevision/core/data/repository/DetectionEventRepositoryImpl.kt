@@ -31,4 +31,7 @@ class DetectionEventRepositoryImpl @Inject constructor(
     override fun getAll(): Flow<List<DetectionEvent>> = dao.getAll().map { it.toDomain() }
 
     override fun countAll(): Flow<Int> = dao.countAll()
+
+    override suspend fun deleteOlderThan(timestamp: Long): Int =
+        withContext(dispatcherProvider.io) { dao.deleteOlderThan(timestamp) }
 }

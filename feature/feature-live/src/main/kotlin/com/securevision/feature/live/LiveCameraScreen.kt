@@ -1,5 +1,7 @@
 package com.securevision.feature.live
 
+import android.content.Context
+import androidx.camera.core.Camera
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,16 +13,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CloudOff
-import androidx.compose.material.icons.outlined.PersonAddAlt
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,44 +30,49 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import com.securevision.core.common.Constants
 import com.securevision.core.domain.engine.EngineStatus
-import com.securevision.core.domain.engine.EnrolmentCapture
+import com.securevision.core.model.Recording
 import com.securevision.core.ui.component.SVEmptyState
 import com.securevision.core.ui.theme.SecureVisionDimens
 import com.securevision.core.ui.theme.SecureVisionTheme
+import com.securevision.feature.live.camera.BindOutcome
 import com.securevision.feature.live.camera.CameraPermissionGate
 import com.securevision.feature.live.camera.CameraPreview
 import com.securevision.feature.live.camera.NotificationPermissionRequest
-import com.securevision.feature.live.component.EnrolFaceDialog
+import com.securevision.feature.live.camera.VideoRecorder
 import com.securevision.feature.live.component.LiveHud
-import com.securevision.feature.live.component.MotionIndicator
+import com.securevision.feature.live.component.RecordButton
 import com.securevision.feature.live.component.SessionStatsBar
 import com.securevision.feature.live.component.SilenceAlarmButton
 import com.securevision.feature.live.overlay.DetectionOverlay
 import com.securevision.feature.live.overlay.OverlayTransform
+import java.io.File
+import kotlinx.coroutines.delay
 
 /**
  * The live camera screen, rendered from state alone.
  *
  * @param uiState What to render.
- * @param enrolmentEvent Outcome of the most recent enrolment, shown once.
  * @param onFrame Called with each analysed frame.
  * @param onFlipCamera Switches lens.
- * @param onEnrol Enrols the face currently in frame.
  * @param onSilenceAlarm Stops a sounding critical alarm.
- * @param onEnrolmentEventConsumed Clears the enrolment outcome once shown.
+ * @param onRecordingStateChange Reports the recorder's state upward.
+ * @param onRecordingFinished Hands a completed clip to be saved.
+ * @param onCameraBound Reports that a lens change has finished binding.
  * @param modifier Modifier applied to the screen.
  */
 @Composable
 fun LiveCameraScreen(
     uiState: LiveUiState,
-    enrolmentEvent: EnrolmentEvent?,
     onFrame: (android.graphics.Bitmap, Boolean) -> Unit,
     onFlipCamera: () -> Unit,
-    onEnrol: (name: String, age: Int) -> Unit,
     onSilenceAlarm: () -> Unit,
-    onEnrolmentEventConsumed: () -> Unit,
+    onRecordingStateChange: (Boolean, Long) -> Unit,
+    onRecordingFinished: (Recording) -> Unit,
+    onCameraBound: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when (uiState) {
@@ -91,12 +97,12 @@ fun LiveCameraScreen(
 
             ReadyContent(
                 state = uiState,
-                enrolmentEvent = enrolmentEvent,
                 onFrame = onFrame,
                 onFlipCamera = onFlipCamera,
-                onEnrol = onEnrol,
                 onSilenceAlarm = onSilenceAlarm,
-                onEnrolmentEventConsumed = onEnrolmentEventConsumed,
+                onRecordingStateChange = onRecordingStateChange,
+                onRecordingFinished = onRecordingFinished,
+                onCameraBound = onCameraBound,
             )
         }
     }
@@ -105,25 +111,40 @@ fun LiveCameraScreen(
 @Composable
 private fun ReadyContent(
     state: LiveUiState.Ready,
-    enrolmentEvent: EnrolmentEvent?,
     onFrame: (android.graphics.Bitmap, Boolean) -> Unit,
     onFlipCamera: () -> Unit,
-    onEnrol: (name: String, age: Int) -> Unit,
     onSilenceAlarm: () -> Unit,
-    onEnrolmentEventConsumed: () -> Unit,
+    onRecordingStateChange: (Boolean, Long) -> Unit,
+    onRecordingFinished: (Recording) -> Unit,
+    onCameraBound: (String) -> Unit,
 ) {
+    val context = LocalContext.current
     var viewSize by remember { mutableStateOf(IntPair(0, 0)) }
-    var showEnrolDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val enrolmentMessage = enrolmentEvent?.toMessage()
+    val recorder = remember(context) { VideoRecorder(context) }
+    var bindOutcome by remember { mutableStateOf(BindOutcome.PREVIEW_ONLY) }
 
-    LaunchedEffect(enrolmentEvent) {
-        if (enrolmentMessage != null) {
-            showEnrolDialog = false
-            snackbarHostState.showSnackbar(enrolmentMessage)
-            onEnrolmentEventConsumed()
+    // Held here rather than in the ViewModel: the torch is a property of the
+    // bound camera, resets when the screen goes away, and is deliberately not
+    // persisted — a light that switches itself back on later would be a surprise.
+    var camera by remember { mutableStateOf<Camera?>(null) }
+    var hasTorch by remember { mutableStateOf(false) }
+    var isTorchOn by remember { mutableStateOf(false) }
+
+    // Ticks the on-screen timer. Driven here rather than from the recorder so the
+    // clock is a function of state and stops the moment recording does.
+    LaunchedEffect(state.isRecording) {
+        while (state.isRecording) {
+            onRecordingStateChange(true, recorder.elapsedMillis())
+            delay(TIMER_TICK_MILLIS)
         }
+    }
+
+    DisposableEffect(recorder) {
+        // A recording left open when the screen goes away would keep writing to a
+        // file nothing is tracking.
+        onDispose { if (recorder.isRecording) recorder.stop() }
     }
 
     Box(
@@ -135,6 +156,22 @@ private fun ReadyContent(
             isFrontCamera = state.isFrontCamera,
             onFrame = { bitmap -> onFrame(bitmap, state.isFrontCamera) },
             modifier = Modifier.fillMaxSize(),
+            recorder = recorder,
+            onBindResult = { outcome ->
+                bindOutcome = outcome
+                // Ends the switch on the bind, not on a frame. A camera that has
+                // bound but not yet produced an image is still a completed
+                // switch, and tying the spinner to analysis is what let a stalled
+                // pass keep the control busy.
+                onCameraBound(outcome.name)
+            },
+            onCameraReady = { bound, torchAvailable ->
+                camera = bound
+                hasTorch = torchAvailable
+                // A lens change drops the torch, so the icon must not keep
+                // claiming it is lit.
+                isTorchOn = false
+            },
         )
 
         if (state.canProjectOverlay && viewSize.width > 0) {
@@ -152,17 +189,25 @@ private fun ReadyContent(
         }
 
         Column(modifier = Modifier.align(Alignment.TopCenter)) {
-            LiveHud(isFrontCamera = state.isFrontCamera, onFlipCamera = onFlipCamera)
+            // The motion meter lives inside the HUD row rather than floating
+            // against the same edge as the flip control, which is what made the
+            // flip button hard to hit.
+            LiveHud(
+                isFrontCamera = state.isFrontCamera,
+                motion = state.motion,
+                isSwitchingCamera = state.isSwitchingCamera,
+                hasTorch = hasTorch,
+                isTorchOn = isTorchOn,
+                onToggleTorch = {
+                    val next = !isTorchOn
+                    camera?.cameraControl?.enableTorch(next)
+                    isTorchOn = next
+                },
+                onFlipCamera = onFlipCamera,
+            )
 
             StatusBanner(state = state)
         }
-
-        MotionIndicator(
-            motion = state.motion,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(SecureVisionDimens.spacingMedium),
-        )
 
         Column(
             modifier = Modifier.align(Alignment.BottomCenter),
@@ -174,17 +219,27 @@ private fun ReadyContent(
                 onSilence = onSilenceAlarm,
             )
 
-            ExtendedFloatingActionButton(
-                onClick = { showEnrolDialog = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ) {
-                Icon(imageVector = Icons.Outlined.PersonAddAlt, contentDescription = null)
-                Text(
-                    text = stringResource(R.string.live_enrol_action),
-                    modifier = Modifier.padding(start = SecureVisionDimens.spacingSmall),
-                )
-            }
+            RecordButton(
+                isRecording = state.isRecording,
+                elapsedMillis = state.recordingElapsedMillis,
+                enabled = bindOutcome == BindOutcome.FULL ||
+                    bindOutcome == BindOutcome.VIDEO_WITHOUT_ANALYSIS,
+                onToggle = {
+                    if (recorder.isRecording) {
+                        recorder.stop()
+                    } else {
+                        startRecording(
+                            recorder = recorder,
+                            context = context,
+                            onStarted = { onRecordingStateChange(true, 0L) },
+                            onFinished = { recording ->
+                                onRecordingStateChange(false, 0L)
+                                recording?.let(onRecordingFinished)
+                            },
+                        )
+                    }
+                },
+            )
 
             SessionStatsBar(stats = state.stats)
         }
@@ -194,14 +249,32 @@ private fun ReadyContent(
             modifier = Modifier.align(Alignment.BottomCenter),
         )
     }
+}
 
-    if (showEnrolDialog) {
-        EnrolFaceDialog(
-            isEnrolling = state.isEnrolling,
-            onConfirm = onEnrol,
-            onDismiss = { showEnrolDialog = false },
-        )
+/**
+ * Allocates a destination and starts capture.
+ *
+ * The file is created through the app's own private-storage path rather than
+ * anywhere shared: a clip may contain footage of people's faces, and anything in
+ * external storage is readable by other apps and indexed by the gallery.
+ */
+private fun startRecording(
+    recorder: VideoRecorder,
+    context: Context,
+    onStarted: () -> Unit,
+    onFinished: (Recording?) -> Unit,
+) {
+    val directory = File(context.filesDir, Constants.Storage.RECORDING_DIRECTORY).apply {
+        if (!exists()) mkdirs()
     }
+
+    val destination = File(
+        directory,
+        "recording_${System.currentTimeMillis()}.${Constants.Storage.VIDEO_EXTENSION}",
+    )
+
+    onStarted()
+    recorder.start(destination, onFinished)
 }
 
 /**
@@ -287,23 +360,8 @@ private fun weaponStatusMessage(status: EngineStatus): String? = when (status) {
     is EngineStatus.Ready, EngineStatus.Initialising -> null
 }
 
-@Composable
-private fun EnrolmentEvent.toMessage(): String = when (this) {
-    is EnrolmentEvent.Enrolled -> stringResource(R.string.live_enrol_success, name)
-    is EnrolmentEvent.Failed -> when (reason) {
-        EnrolmentCapture.Failure.Reason.NO_FACE_DETECTED ->
-            stringResource(R.string.live_enrol_error_no_face)
-        EnrolmentCapture.Failure.Reason.MULTIPLE_FACES ->
-            stringResource(R.string.live_enrol_error_multiple_faces)
-        EnrolmentCapture.Failure.Reason.POOR_QUALITY ->
-            stringResource(R.string.live_enrol_error_poor_quality)
-        EnrolmentCapture.Failure.Reason.LANDMARKS_UNAVAILABLE ->
-            stringResource(R.string.live_enrol_error_landmarks)
-        EnrolmentCapture.Failure.Reason.MODEL_UNAVAILABLE ->
-            stringResource(R.string.live_enrol_error_model)
-        null -> stringResource(R.string.live_enrol_error_generic)
-    }
-}
-
 /** Avoids boxing a pair of ints on every layout pass. */
 private data class IntPair(val width: Int, val height: Int)
+
+/** Timer refresh. Fast enough to look live, slow enough not to recompose wastefully. */
+private const val TIMER_TICK_MILLIS = 500L

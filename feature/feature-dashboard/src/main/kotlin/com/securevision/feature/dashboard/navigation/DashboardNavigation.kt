@@ -19,12 +19,14 @@ import com.securevision.feature.dashboard.DashboardViewModel
  * @param onNavigateToLive Opens Live View.
  * @param onNavigateToAlerts Opens the alerts list.
  * @param onNavigateToProfiles Opens the enrolled profiles list.
+ * @param onNavigateToHistory Opens the detection history.
  * @param onNavigateToSettings Opens settings.
  */
 fun NavGraphBuilder.dashboardScreen(
     onNavigateToLive: () -> Unit,
     onNavigateToAlerts: () -> Unit,
     onNavigateToProfiles: () -> Unit,
+    onNavigateToHistory: () -> Unit,
     onNavigateToSettings: () -> Unit,
 ) {
     composable(route = DashboardRoutes.DASHBOARD) {
@@ -32,6 +34,7 @@ fun NavGraphBuilder.dashboardScreen(
             onNavigateToLive = onNavigateToLive,
             onNavigateToAlerts = onNavigateToAlerts,
             onNavigateToProfiles = onNavigateToProfiles,
+            onNavigateToHistory = onNavigateToHistory,
             onNavigateToSettings = onNavigateToSettings,
         )
     }
@@ -48,6 +51,7 @@ private fun DashboardRoute(
     onNavigateToLive: () -> Unit,
     onNavigateToAlerts: () -> Unit,
     onNavigateToProfiles: () -> Unit,
+    onNavigateToHistory: () -> Unit,
     onNavigateToSettings: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
@@ -58,6 +62,7 @@ private fun DashboardRoute(
         onNavigateToLive = onNavigateToLive,
         onNavigateToAlerts = onNavigateToAlerts,
         onNavigateToProfiles = onNavigateToProfiles,
+        onNavigateToHistory = onNavigateToHistory,
         onNavigateToSettings = onNavigateToSettings,
     )
 }

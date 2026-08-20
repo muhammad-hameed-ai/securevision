@@ -49,6 +49,16 @@ class AudioTrackAlarmPlayer @Inject constructor(
     @Volatile
     private var sounding = false
 
+    /**
+     * Which severity owns the tone currently playing, or `null` when silent.
+     *
+     * The whole point of tracking it: a request from a lower severity is refused
+     * rather than allowed to release the track. Only the user's Silence button,
+     * or an equal-or-higher severity, can take over.
+     */
+    @Volatile
+    private var soundingSeverity: Severity? = null
+
     override val isSounding: Boolean get() = sounding
 
     override suspend fun play(
@@ -57,12 +67,40 @@ class AudioTrackAlarmPlayer @Inject constructor(
         vibrationEnabled: Boolean,
     ) {
         if (vibrationEnabled) vibrator.vibrate(severity)
-        if (!soundEnabled) return
+
+        if (!soundEnabled) {
+            Log.i(TAG, "alarm suppressed: sound is switched off in settings")
+            return
+        }
+
+        // A lower-severity alert must never take the speaker from a higher one.
+        // Without this an unknown-person chime tore down a sounding weapon alarm
+        // — `start()` releases the current track before every tone — so the one
+        // alarm that matters most was silenced by the one that matters least.
+        val owner = soundingSeverity
+        if (owner != null && owner.isAtLeast(severity) && owner != severity) {
+            Log.i(TAG, "$severity tone refused: a $owner alarm owns the speaker")
+            return
+        }
 
         val cycle = AlarmToneSynth.cycleFor(severity)
-        if (cycle.isEmpty()) return
+        if (cycle.isEmpty()) {
+            Log.i(TAG, "no tone defined for $severity — silent by design")
+            return
+        }
 
-        runCatching { start(cycle, repeating = AlarmToneSynth.repeats(severity)) }
+        // The single most common reason an alarm is inaudible while the phone
+        // seems fine: the tone is routed to the ALARM stream, which has its own
+        // volume separate from media and ringer. Reported rather than worked
+        // around — overriding the user's own volume setting would be worse.
+        val alarmVolume = audioManager?.getStreamVolume(AudioManager.STREAM_ALARM) ?: -1
+        if (alarmVolume == 0) {
+            Log.w(TAG, "alarm stream volume is 0 — the tone will play but be inaudible")
+        }
+
+        Log.i(TAG, "playing $severity tone, ${cycle.size} samples, alarm volume $alarmVolume")
+
+        runCatching { start(cycle, severity, repeating = AlarmToneSynth.repeats(severity)) }
             .onFailure { throwable ->
                 // A degraded alert, not a failed one: the record is already
                 // written, so the alarm going quiet must not propagate.
@@ -74,6 +112,9 @@ class AudioTrackAlarmPlayer @Inject constructor(
     override fun silence() {
         synchronized(this) {
             sounding = false
+            // Silence is the user's override, so it releases ownership whatever
+            // severity holds it.
+            soundingSeverity = null
 
             track?.let { active ->
                 runCatching {
@@ -92,10 +133,12 @@ class AudioTrackAlarmPlayer @Inject constructor(
         vibrator.cancel()
     }
 
-    private fun start(cycle: ShortArray, repeating: Boolean) {
+    private fun start(cycle: ShortArray, severity: Severity, repeating: Boolean) {
         synchronized(this) {
             // A second critical detection while the alarm is already sounding must
-            // not stack a second track on top of the first.
+            // not stack a second track on top of the first — but it must also not
+            // restart it, which is what lets the weapon alarm keep running
+            // continuously while the weapon stays in frame.
             if (sounding && repeating) return
 
             releaseCurrentLocked()
@@ -125,8 +168,16 @@ class AudioTrackAlarmPlayer @Inject constructor(
 
             newTrack.play()
 
+            // The state after play() is the ground truth. A track that failed to
+            // start reports STOPPED here, which is the difference between "the
+            // code ran" and "the device made a sound".
+            Log.i(TAG, "AudioTrack state=${newTrack.state} playState=${newTrack.playState}")
+
             track = newTrack
             sounding = repeating
+            // Only a repeating tone owns the speaker. A one-shot chime finishes
+            // on its own and must not lock out anything that follows it.
+            soundingSeverity = severity.takeIf { repeating }
         }
     }
 
@@ -151,7 +202,10 @@ class AudioTrackAlarmPlayer @Inject constructor(
             .build()
 
         runCatching { manager.requestAudioFocus(request) }
-            .onSuccess { focusRequest = request }
+            .onSuccess { result ->
+                focusRequest = request
+                Log.i(TAG, "audio focus request returned $result")
+            }
             .onFailure { throwable ->
                 // Play anyway. Failing to duck the user's music is a far smaller
                 // problem than a weapon alarm that never sounds.

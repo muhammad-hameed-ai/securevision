@@ -1,6 +1,7 @@
 package com.securevision.core.data.database.converter
 
 import androidx.room.TypeConverter
+import com.securevision.core.model.AccessLevel
 import com.securevision.core.model.AlertType
 import com.securevision.core.model.Severity
 
@@ -37,4 +38,20 @@ class EnumConverters {
      */
     @TypeConverter
     fun toSeverity(value: String): Severity = Severity.valueOf(value)
+
+    /** @param level The operator classification to store. */
+    @TypeConverter
+    fun fromAccessLevel(level: AccessLevel): String = level.name
+
+    /**
+     * @param value Stored name.
+     * @return The matching level, or [AccessLevel.DEFAULT].
+     *
+     * Lenient where the alert enums are strict, and deliberately so: an
+     * unrecognised access level costs a mislabelled badge, whereas throwing would
+     * make a whole profile — including a face the app can still recognise —
+     * unreadable.
+     */
+    @TypeConverter
+    fun toAccessLevel(value: String?): AccessLevel = AccessLevel.fromStorage(value)
 }

@@ -21,4 +21,12 @@ interface DetectionEventRepository {
 
     /** Live total event count, shown on the dashboard. */
     fun countAll(): Flow<Int>
+
+    /**
+     * Prunes old events as part of the retention policy.
+     *
+     * @param timestamp Epoch milliseconds; events strictly older than this go.
+     * @return How many events were deleted.
+     */
+    suspend fun deleteOlderThan(timestamp: Long): Int
 }

@@ -15,15 +15,13 @@ interface AlertNotifier {
     /**
      * Posts one notification.
      *
-     * @param alert The alert to announce; its snapshot is attached when present.
-     * @param label The detector's subject for this alert, e.g. `"knife"`. Carried
-     *   separately because [AlertRecord] holds the category but not the class the
-     *   model actually reported, and "Weapon detected" is meaningfully worse than
-     *   "Knife detected" on a lock screen.
+     * @param alert The alert to announce. Its snapshot is attached when present,
+     *   and its `label` names the subject — "Knife detected" rather than the
+     *   much weaker "Weapon detected" on a lock screen.
      * @return What actually happened, so the caller can explain a silent phone
      *   rather than leaving the user to wonder.
      */
-    suspend fun post(alert: AlertRecord, label: String): NotificationOutcome
+    suspend fun post(alert: AlertRecord): NotificationOutcome
 }
 
 /**

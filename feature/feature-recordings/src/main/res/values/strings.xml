@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="recordings_title">Recordings</string>
+    <string name="recordings_player_title">Playback</string>
+
+    <!-- Stated plainly: the operator saw boxes on screen while recording and would
+         otherwise reasonably assume they were captured. -->
+    <string name="recordings_no_overlay_notice">Clips record the camera feed. Detection boxes are drawn on screen only and are not included in the video.</string>
+
+    <string name="recordings_empty_title">No recordings yet</string>
+    <string name="recordings_empty_subtitle">Tap Record on the live screen to capture a clip. Clips are kept on this device only.</string>
+
+    <string name="recordings_delete_title">Delete this recording?</string>
+    <string name="recordings_delete_body">The video file is removed from this device. This cannot be undone.</string>
+    <string name="recordings_delete_confirm">Delete</string>
+    <string name="recordings_cancel">Cancel</string>
+
+    <string name="recordings_missing_title">Recording unavailable</string>
+    <string name="recordings_missing_subtitle">The video file is no longer on this device.</string>
+
+</resources>

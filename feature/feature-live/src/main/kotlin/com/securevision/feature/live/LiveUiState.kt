@@ -39,7 +39,10 @@ sealed interface LiveUiState {
      * @property analysisHeight Height of the upright analysis frame, for the overlay.
      * @property isFrontCamera Which camera is active; the overlay mirrors for it.
      * @property enrolledCount How many people the app can currently recognise.
-     * @property isEnrolling Whether an enrolment capture is in flight.
+     * @property isSwitchingCamera Whether a lens change is in flight. CameraX has
+     *   to unbind and rebind, so the wait is real and the HUD shows it.
+     * @property isRecording Whether a clip is being captured.
+     * @property recordingElapsedMillis How long the current clip has been running.
      */
     @Immutable
     data class Ready(
@@ -55,8 +58,10 @@ sealed interface LiveUiState {
         val analysisWidth: Int = 0,
         val analysisHeight: Int = 0,
         val isFrontCamera: Boolean = false,
+        val isSwitchingCamera: Boolean = false,
         val enrolledCount: Int = 0,
-        val isEnrolling: Boolean = false,
+        val isRecording: Boolean = false,
+        val recordingElapsedMillis: Long = 0L,
     ) : LiveUiState {
 
         /** Whether faces can be recognised, as opposed to merely detected. */

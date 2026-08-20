@@ -88,6 +88,15 @@ class AlertGate @Inject constructor() {
         /** Key for a weapon, which de-duplicates per class — weapons have no id. */
         fun weaponKey(weaponType: String): String = "weapon$KEY_SEPARATOR$weaponType"
 
+        /**
+         * Key for a recognised person, de-duplicated per profile.
+         *
+         * A separate kind from [faceKey] deliberately: a quiet known-person log
+         * entry must not consume the window that would otherwise let a genuine
+         * stranger alert through.
+         */
+        fun knownKey(profileId: String): String = "known$KEY_SEPARATOR$profileId"
+
         /** Key for motion, which has one bucket: the scene either moved or did not. */
         fun motionKey(): String = "motion$KEY_SEPARATOR"
     }

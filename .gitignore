@@ -39,3 +39,10 @@ google-services.json
 # faces, and says recognition is unavailable.
 *.tflite
 *.tflite.bak
+
+# PyTorch checkpoints. Nothing here produces one today, but a YOLO export starts
+# life as a .pt and those run to hundreds of megabytes — cheaper to exclude now
+# than to scrub from history later.
+*.pt
+*.pth
+*.onnx

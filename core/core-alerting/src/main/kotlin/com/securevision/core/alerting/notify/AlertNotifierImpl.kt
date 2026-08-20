@@ -38,7 +38,7 @@ class AlertNotifierImpl @Inject constructor(
 
     private val notificationManager = NotificationManagerCompat.from(context)
 
-    override suspend fun post(alert: AlertRecord, label: String): NotificationOutcome {
+    override suspend fun post(alert: AlertRecord): NotificationOutcome {
         // Checked inline rather than in a helper. Lint traces a permission guard
         // only within the method that needs it, and a guard it cannot see is a
         // guard the next person will assume is missing.
@@ -60,7 +60,7 @@ class AlertNotifierImpl @Inject constructor(
         channels.register()
 
         return runCatching {
-            notificationManager.notify(notificationIdFor(alert), build(alert, label))
+            notificationManager.notify(notificationIdFor(alert), build(alert))
             NotificationOutcome.POSTED
         }.getOrElse { throwable ->
             Log.w(TAG, "posting notification failed", throwable)
@@ -68,11 +68,11 @@ class AlertNotifierImpl @Inject constructor(
         }
     }
 
-    private fun build(alert: AlertRecord, label: String) = NotificationCompat
+    private fun build(alert: AlertRecord) = NotificationCompat
         .Builder(context, channels.channelFor(alert.severity))
         .setSmallIcon(R.drawable.ic_alert_shield)
         .setContentTitle(titleFor(alert.type))
-        .setContentText(bodyFor(alert, label))
+        .setContentText(bodyFor(alert))
         .setCategory(NotificationCompat.CATEGORY_ALARM)
         .setPriority(priorityFor(alert))
         .setWhen(alert.timestamp)
@@ -153,14 +153,14 @@ class AlertNotifierImpl @Inject constructor(
         },
     )
 
-    private fun bodyFor(alert: AlertRecord, label: String): String {
+    private fun bodyFor(alert: AlertRecord): String {
         val camera = context.getString(
             if (alert.cameraFacing == FRONT) R.string.camera_front else R.string.camera_back,
         )
 
         return when (alert.type) {
             AlertType.WEAPON ->
-                context.getString(R.string.notification_weapon_body, label.weaponName(), camera)
+                context.getString(R.string.notification_weapon_body, alert.label.weaponName(), camera)
             AlertType.UNKNOWN_PERSON ->
                 context.getString(R.string.notification_unknown_body, camera)
             AlertType.MOTION ->

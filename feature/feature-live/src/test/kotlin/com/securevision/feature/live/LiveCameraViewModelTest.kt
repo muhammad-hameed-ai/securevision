@@ -18,26 +18,31 @@ import com.securevision.core.domain.engine.WeaponDetectionEngine
 import com.securevision.core.domain.repository.AlertRepository
 import com.securevision.core.domain.repository.DetectionEventRepository
 import com.securevision.core.domain.repository.EnrolledProfileRepository
+import com.securevision.core.domain.repository.RecordingRepository
 import com.securevision.core.domain.repository.SettingsRepository
 import com.securevision.core.domain.usecase.dashboard.GetEnrolledProfileCountUseCase
 import com.securevision.core.domain.usecase.live.AnalyseAttributesUseCase
 import com.securevision.core.domain.usecase.live.CaptureSnapshotUseCase
 import com.securevision.core.domain.usecase.live.DetectMotionUseCase
 import com.securevision.core.domain.usecase.live.DetectWeaponsUseCase
-import com.securevision.core.domain.usecase.live.EnrolFaceFromFrameUseCase
 import com.securevision.core.domain.usecase.live.PrepareDetectorsUseCase
 import com.securevision.core.domain.usecase.live.RaiseAlertUseCase
 import com.securevision.core.domain.usecase.live.RecogniseFacesUseCase
 import com.securevision.core.domain.usecase.live.SilenceAlarmUseCase
+import com.securevision.core.domain.usecase.live.SoundAlarmUseCase
 import com.securevision.core.domain.usecase.profile.GetEnrolledProfilesUseCase
+import com.securevision.core.domain.usecase.recording.SaveRecordingUseCase
 import com.securevision.core.domain.usecase.settings.ObserveSettingsUseCase
 import com.securevision.core.model.AlertRecord
+import com.securevision.core.model.AlertType
+import com.securevision.core.model.Severity
 import com.securevision.core.model.AppSettings
 import com.securevision.core.model.AttributeAvailability
 import com.securevision.core.model.BoundingBox
 import com.securevision.core.model.DetectionResult
 import com.securevision.core.model.MatchStatus
 import com.securevision.core.model.MotionResult
+import com.securevision.core.model.Recording
 import com.securevision.core.model.WeaponDetection
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -93,6 +98,7 @@ class LiveCameraViewModelTest {
     private val profileRepository = mockk<EnrolledProfileRepository>(relaxed = true)
     private val settingsRepository = mockk<SettingsRepository>(relaxed = true)
     private val photoStore = mockk<ProfilePhotoStore>(relaxed = true)
+    private val recordingRepository = mockk<RecordingRepository>(relaxed = true)
     private val frameBitmap = mockk<android.graphics.Bitmap>(relaxed = true)
 
     @Before
@@ -111,7 +117,7 @@ class LiveCameraViewModelTest {
         coEvery { weaponEngine.detect(any(), any()) } returns emptyList()
         coEvery { motionEngine.detect(any(), any()) } returns MotionResult.NONE
         coEvery { attributeEngine.prepare() } returns AttributeAvailability()
-        coEvery { notifier.post(any(), any()) } returns NotificationOutcome.POSTED
+        coEvery { notifier.post(any()) } returns NotificationOutcome.POSTED
         every { alarmPlayer.isSounding } returns false
     }
 
@@ -211,13 +217,19 @@ class LiveCameraViewModelTest {
     }
 
     @Test
-    fun `a recognised person raises no alert`() = runTest {
+    fun `a recognised person raises no stranger alert`() = runTest {
+        val saved = mutableListOf<AlertRecord>()
+        coEvery { alertRepository.save(capture(saved)) } returns Unit
+
         stubFaces(face(trackingId = 7, status = MatchStatus.KNOWN, profileId = "ayesha"))
         val viewModel = viewModel()
 
         viewModel.onFrame(frameBitmap, isFrontCamera = false)
 
-        coVerify(exactly = 0) { alertRepository.save(any()) }
+        // Recognition produces a KNOWN entry, never an UNKNOWN one. Phase 7
+        // changed this from "no alert at all" so a recognition is visible.
+        assertEquals(0, saved.count { it.type == AlertType.UNKNOWN_PERSON })
+        assertEquals(1, saved.count { it.type == AlertType.KNOWN_PERSON })
     }
 
     @Test
@@ -345,7 +357,7 @@ class LiveCameraViewModelTest {
 
     @Test
     fun `a refused notification permission is explained, not hidden`() = runTest {
-        coEvery { notifier.post(any(), any()) } returns NotificationOutcome.PERMISSION_DENIED
+        coEvery { notifier.post(any()) } returns NotificationOutcome.PERMISSION_DENIED
         stubFaces(face(trackingId = 7, status = MatchStatus.UNKNOWN))
         val viewModel = viewModel()
 
@@ -358,25 +370,134 @@ class LiveCameraViewModelTest {
     }
 
     @Test
-    fun `enrolling with no captured frame reports no face rather than crashing`() = runTest {
+    fun `enrolling mid-session stops the same face reading as unknown`() = runTest {
+        // The reported symptom was unknown alerts for an enrolled person. The
+        // profile list is a Flow and the voter is a sliding window, so a face
+        // seen before enrolment resolves to KNOWN once the profile lands — with
+        // no restart and nothing to invalidate.
+        val saved = mutableListOf<AlertRecord>()
+        coEvery { alertRepository.save(capture(saved)) } returns Unit
+
+        stubFaces(face(trackingId = 7, status = MatchStatus.UNKNOWN))
         val viewModel = viewModel()
+        viewModel.onFrame(frameBitmap, isFrontCamera = false)
 
-        viewModel.enrolCurrentFace(name = "Ayesha", age = 30)
+        // The person is now enrolled and the matcher recognises them.
+        stubFaces(face(trackingId = 7, status = MatchStatus.KNOWN, profileId = "ayesha"))
+        advanceThrottle(viewModel)
 
-        assertEquals(
-            EnrolmentEvent.Failed(EnrolmentCapture.Failure.Reason.NO_FACE_DETECTED),
-            viewModel.enrolmentEvent.value,
-        )
+        val state = viewModel.uiState.value as LiveUiState.Ready
+        assertEquals(MatchStatus.KNOWN, state.detections.first().matchStatus)
+
+        // Exactly one UNKNOWN — the original, historical one. The recognition
+        // that follows adds a KNOWN entry, never a second stranger alert.
+        assertEquals(1, saved.count { it.type == AlertType.UNKNOWN_PERSON })
+        assertEquals(1, saved.count { it.type == AlertType.KNOWN_PERSON })
     }
 
     @Test
-    fun `consuming the enrolment event clears it`() = runTest {
+    fun `a recognised person is visible but silent`() = runTest {
+        stubFaces(face(trackingId = 7, status = MatchStatus.KNOWN, profileId = "ayesha"))
         val viewModel = viewModel()
-        viewModel.enrolCurrentFace(name = "Ayesha", age = 30)
 
-        viewModel.consumeEnrolmentEvent()
+        viewModel.onFrame(frameBitmap, isFrontCamera = false)
 
-        assertEquals(null, viewModel.enrolmentEvent.value)
+        val saved = slot<AlertRecord>()
+        coVerify(exactly = 1) { alertRepository.save(capture(saved)) }
+
+        // Visible in the alerts list, and named — an unnamed "recognised person"
+        // entry would say nothing worth recording.
+        assertEquals(AlertType.KNOWN_PERSON, saved.captured.type)
+        assertEquals(Severity.LOW, saved.captured.severity)
+        assertEquals("ayesha", saved.captured.label)
+
+        // But never announced: no notification, and LOW produces no tone.
+        coVerify(exactly = 0) { notifier.post(any()) }
+        coVerify(exactly = 1) { eventRepository.save(any()) }
+    }
+
+    @Test
+    fun `flipping the camera clears vote history`() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.flipCamera()
+
+        // Tracking ids restart on the new lens and are commonly reused, so stale
+        // votes would put the previous person's name on a different face.
+        coVerify(exactly = 1) { faceEngine.resetTracking() }
+    }
+
+    @Test
+    fun `a stalled analysis pass cannot eat the next flip`() = runTest {
+        val viewModel = viewModel()
+
+        // First flip leaves the switching state set and, in the field, could
+        // leave the analysis latch stuck if a pass never completed.
+        viewModel.flipCamera()
+        assertTrue((viewModel.uiState.value as LiveUiState.Ready).isSwitchingCamera)
+
+        // Past the debounce, a second tap must still be honoured — the previous
+        // build rejected it for as long as the switching flag was set, which is
+        // what made the button need four or five presses.
+        Thread.sleep(FLIP_DEBOUNCE_WAIT_MILLIS)
+        viewModel.flipCamera()
+
+        assertFalse((viewModel.uiState.value as LiveUiState.Ready).isFrontCamera)
+    }
+
+    @Test
+    fun `the bind result ends the switch without waiting for a frame`() = runTest {
+        val viewModel = viewModel()
+        viewModel.flipCamera()
+
+        viewModel.onCameraBound("FULL")
+
+        // No frame required. Tying this to analysis is what left the spinner and
+        // the disabled control outliving the actual switch.
+        assertFalse((viewModel.uiState.value as LiveUiState.Ready).isSwitchingCamera)
+    }
+
+    @Test
+    fun `flipping shows a switching state until a frame arrives`() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.flipCamera()
+
+        // The UI responds on tap rather than after the rebind, which is what
+        // made the control feel dead.
+        assertTrue((viewModel.uiState.value as LiveUiState.Ready).isSwitchingCamera)
+
+        viewModel.onFrame(frameBitmap, isFrontCamera = true)
+
+        assertFalse((viewModel.uiState.value as LiveUiState.Ready).isSwitchingCamera)
+    }
+
+    @Test
+    fun `recording state reaches the screen`() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.onRecordingStateChange(isRecording = true, elapsedMillis = 4_000L)
+
+        val state = viewModel.uiState.value as LiveUiState.Ready
+        assertTrue(state.isRecording)
+        assertEquals(4_000L, state.recordingElapsedMillis)
+    }
+
+    @Test
+    fun `a finished clip is saved`() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.onRecordingFinished(
+            Recording(
+                id = "clip-1",
+                filePath = "/data/recordings/clip-1.mp4",
+                durationMs = 5_000L,
+                thumbnailUri = null,
+                createdAt = 1_700_000_000_000L,
+            ),
+        )
+
+        coVerify(exactly = 1) { recordingRepository.save(any()) }
     }
 
     /** Waits past the analysis throttle so the next frame is not dropped. */
@@ -406,12 +527,7 @@ class LiveCameraViewModelTest {
         detectMotion = DetectMotionUseCase(motionEngine, dispatchers),
         analyseAttributes = AnalyseAttributesUseCase(attributeEngine, dispatchers),
         captureSnapshot = CaptureSnapshotUseCase(snapshotStore),
-        enrolFaceFromFrame = EnrolFaceFromFrameUseCase(
-            engine = faceEngine,
-            photoStore = photoStore,
-            repository = profileRepository,
-            dispatcherProvider = dispatchers,
-        ),
+        saveRecording = SaveRecordingUseCase(recordingRepository, dispatchers),
         raiseAlert = RaiseAlertUseCase(
             gate = gate,
             alertRepository = alertRepository,
@@ -422,6 +538,7 @@ class LiveCameraViewModelTest {
             dispatcherProvider = dispatchers,
         ),
         silenceAlarm = SilenceAlarmUseCase(alarmPlayer),
+        soundAlarm = SoundAlarmUseCase(alarmPlayer, settingsRepository),
         alertGate = gate,
         getEnrolledProfiles = GetEnrolledProfilesUseCase(profileRepository, dispatchers),
         getEnrolledProfileCount = GetEnrolledProfileCountUseCase(profileRepository, dispatchers),
@@ -461,5 +578,8 @@ class LiveCameraViewModelTest {
 
         /** Matches the ViewModel's analysis interval, plus a margin. */
         const val THROTTLE_MILLIS = 400L
+
+        /** Just past the flip debounce, so a deliberate second tap is accepted. */
+        const val FLIP_DEBOUNCE_WAIT_MILLIS = 500L
     }
 }

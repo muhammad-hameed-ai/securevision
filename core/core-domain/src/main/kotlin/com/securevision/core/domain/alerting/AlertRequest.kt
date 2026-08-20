@@ -21,6 +21,10 @@ import com.securevision.core.model.Severity
  * @property confidence Detector score in `0f..1f`.
  * @property cameraFacing Which camera saw it, `"front"` or `"back"`.
  * @property snapshotUri Captured still, or `null` when none was saved.
+ * @property notify Whether this alert should reach the notification shade. A
+ *   recognised person is recorded and shown in-app but never notified: the
+ *   operator asked to be told about exceptions, and a phone that announces every
+ *   expected arrival is a phone whose notifications get switched off.
  * @property attributes Soft attributes. Defaults to
  *   [FaceAttributes.NOT_ASSESSED], whose fields are all `null` — which is what
  *   reaches the database, so an alert never claims "no beard" about a person no
@@ -35,6 +39,7 @@ data class AlertRequest(
     val confidence: Float,
     val cameraFacing: String,
     val snapshotUri: String? = null,
+    val notify: Boolean = true,
     val attributes: FaceAttributes = FaceAttributes.NOT_ASSESSED,
     val timestamp: Long = System.currentTimeMillis(),
 ) {
@@ -130,6 +135,42 @@ data class AlertRequest(
             confidence = intensity,
             cameraFacing = cameraFacing,
             snapshotUri = snapshotUri,
+            attributes = FaceAttributes.NOT_ASSESSED,
+            timestamp = timestamp,
+        )
+
+        /**
+         * A recognised person.
+         *
+         * [Severity.LOW], which is the whole design: it appears in the alerts
+         * list so a recognition is *seen*, but LOW produces no tone — the synth
+         * returns silence below HIGH — and no heads-up notification. Someone the
+         * operator has enrolled is the normal case, and interrupting for the
+         * normal case is how the weapon alarm ends up ignored too.
+         *
+         * @param profileId Who was recognised; keys the de-duplication.
+         * @param profileName Their display name.
+         * @param confidence Match similarity in `0f..1f`.
+         * @param cameraFacing Which camera saw them.
+         * @param snapshotUri Captured still, or `null`.
+         * @param timestamp When the sighting was confirmed.
+         */
+        fun knownPerson(
+            profileId: String,
+            profileName: String,
+            confidence: Float,
+            cameraFacing: String,
+            snapshotUri: String? = null,
+            timestamp: Long = System.currentTimeMillis(),
+        ) = AlertRequest(
+            dedupKey = AlertGate.knownKey(profileId),
+            type = AlertType.KNOWN_PERSON,
+            severity = Severity.LOW,
+            label = profileName,
+            confidence = confidence,
+            cameraFacing = cameraFacing,
+            snapshotUri = snapshotUri,
+            notify = false,
             attributes = FaceAttributes.NOT_ASSESSED,
             timestamp = timestamp,
         )

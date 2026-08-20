@@ -16,6 +16,7 @@ fun EnrolledProfileEntity.toDomain(): EnrolledProfile = EnrolledProfile(
     age = age,
     photoUri = photoUri,
     embedding = embedding,
+    accessLevel = accessLevel,
     isWatchlisted = isWatchlisted,
     createdAt = createdAt,
 )
@@ -27,6 +28,7 @@ fun EnrolledProfile.toEntity(): EnrolledProfileEntity = EnrolledProfileEntity(
     age = age,
     photoUri = photoUri,
     embedding = embedding,
+    accessLevel = accessLevel,
     isWatchlisted = isWatchlisted,
     createdAt = createdAt,
 )

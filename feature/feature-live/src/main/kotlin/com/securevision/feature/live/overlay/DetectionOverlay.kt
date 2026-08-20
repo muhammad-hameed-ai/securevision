@@ -55,7 +55,7 @@ fun DetectionOverlay(
         detections.forEach { detection ->
             val rect = transform.project(detection.boundingBox)
 
-            val colour = when (detection.matchStatus) {
+            val colour = when (detection.displayStatus()) {
                 MatchStatus.KNOWN -> palette.known
                 MatchStatus.UNKNOWN -> palette.unknown
                 MatchStatus.PROCESSING -> Color(PROCESSING_COLOUR)
@@ -101,7 +101,30 @@ fun DetectionOverlay(
     }
 }
 
-private fun DetectionResult.label(): String = when (matchStatus) {
+/**
+ * The status this face is actually **drawn** as.
+ *
+ * A security control, not a formatting helper. Green claims "I recognise this
+ * person", so it is only ever painted when there is a person to name: a KNOWN
+ * verdict carrying no `profileId` or no name is a contradiction, and it is
+ * downgraded rather than trusted.
+ *
+ * Before this, a face the pipeline had not resolved was painted `#00C9A7` —
+ * visually identical to the `#00D97E` used for a genuine match on a moving
+ * preview — so anything that failed silently looked like a successful
+ * recognition. That is a false positive in a security product, and the fix is to
+ * make it unrepresentable rather than unlikely.
+ */
+internal fun DetectionResult.displayStatus(): MatchStatus = when (matchStatus) {
+    MatchStatus.KNOWN -> if (hasResolvedIdentity()) MatchStatus.KNOWN else MatchStatus.PROCESSING
+    else -> matchStatus
+}
+
+/** Whether a KNOWN verdict can actually name the person it claims to recognise. */
+internal fun DetectionResult.hasResolvedIdentity(): Boolean =
+    !profileId.isNullOrBlank() && !profileName.isNullOrBlank()
+
+private fun DetectionResult.label(): String = when (displayStatus()) {
     MatchStatus.KNOWN -> "${profileName.orEmpty()}  ${(confidence * PERCENT).roundToInt()}%"
     MatchStatus.UNKNOWN -> UNKNOWN_LABEL
     MatchStatus.PROCESSING -> PROCESSING_LABEL
@@ -198,8 +221,15 @@ private const val PERCENT = 100f
 private const val OUTLINE_ALPHA = 0.35f
 private const val LABEL_BACKDROP_ALPHA = 0.55f
 
-/** Brand cyan, matching the theme accent, for a face still being resolved. */
-private const val PROCESSING_COLOUR = 0xFF00C9A7
+/**
+ * Amber for a face the pipeline has not resolved.
+ *
+ * Deliberately **not** the brand cyan this used to be. `#00C9A7` sat a few
+ * degrees of hue from the `#00D97E` used for a recognised person and read as
+ * green on a live preview — so an unresolved face looked recognised. Amber
+ * cannot be confused with either green or the red used for a stranger.
+ */
+private const val PROCESSING_COLOUR = 0xFFFFB300
 
 private const val UNKNOWN_LABEL = "UNKNOWN"
 private const val PROCESSING_LABEL = "…"

@@ -36,6 +36,23 @@ interface AlertDao {
     @Query("SELECT * FROM alerts ORDER BY timestamp DESC LIMIT :limit")
     fun getRecent(limit: Int): Flow<List<AlertEntity>>
 
+    /**
+     * Looks up one alert.
+     *
+     * @param id Alert identifier.
+     * @return The row, or `null` if it has been dismissed.
+     */
+    @Query("SELECT * FROM alerts WHERE id = :id")
+    suspend fun getById(id: String): AlertEntity?
+
+    /**
+     * Removes one alert.
+     *
+     * @param id Alert identifier.
+     */
+    @Query("DELETE FROM alerts WHERE id = :id")
+    suspend fun deleteById(id: String)
+
     /** Live count of unread alerts. */
     @Query("SELECT COUNT(*) FROM alerts WHERE is_read = 0")
     fun getUnreadCount(): Flow<Int>

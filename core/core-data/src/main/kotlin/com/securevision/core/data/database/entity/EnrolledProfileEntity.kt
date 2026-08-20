@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.securevision.core.model.AccessLevel
 
 /**
  * Room row for an enrolled person profile.
@@ -16,6 +17,8 @@ import androidx.room.PrimaryKey
  * @property age Age in years, captured at enrolment.
  * @property photoUri `file://` URI of the enrolment photo in internal storage.
  * @property embedding L2-normalised FaceNet-512 vector, stored as a BLOB.
+ * @property accessLevel Operator classification, stored by name. Added in schema
+ *   v3; rows written before that migrate to `STANDARD`.
  * @property isWatchlisted Whether a sighting should be escalated.
  * @property createdAt Enrolment time, epoch milliseconds UTC.
  */
@@ -40,6 +43,9 @@ class EnrolledProfileEntity(
     @ColumnInfo(name = "embedding", typeAffinity = ColumnInfo.BLOB)
     val embedding: FloatArray,
 
+    @ColumnInfo(name = "access_level", defaultValue = "STANDARD")
+    val accessLevel: AccessLevel,
+
     @ColumnInfo(name = "is_watchlisted")
     val isWatchlisted: Boolean,
 
@@ -63,6 +69,7 @@ class EnrolledProfileEntity(
             age == other.age &&
             photoUri == other.photoUri &&
             embedding.contentEquals(other.embedding) &&
+            accessLevel == other.accessLevel &&
             isWatchlisted == other.isWatchlisted &&
             createdAt == other.createdAt
     }
@@ -73,6 +80,7 @@ class EnrolledProfileEntity(
         result = 31 * result + age
         result = 31 * result + photoUri.hashCode()
         result = 31 * result + embedding.contentHashCode()
+        result = 31 * result + accessLevel.hashCode()
         result = 31 * result + isWatchlisted.hashCode()
         result = 31 * result + createdAt.hashCode()
         return result
@@ -80,7 +88,8 @@ class EnrolledProfileEntity(
 
     override fun toString(): String =
         "EnrolledProfileEntity(id=$id, name=$name, age=$age, photoUri=$photoUri, " +
-            "embedding=${embedding.size} dims, isWatchlisted=$isWatchlisted, createdAt=$createdAt)"
+            "embedding=${embedding.size} dims, accessLevel=$accessLevel, " +
+            "isWatchlisted=$isWatchlisted, createdAt=$createdAt)"
 
     companion object {
         const val TABLE_NAME = "enrolled_profiles"

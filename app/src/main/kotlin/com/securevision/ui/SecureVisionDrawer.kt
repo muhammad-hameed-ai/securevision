@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material3.Badge
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -22,6 +23,9 @@ import com.securevision.core.ui.preview.ThemePreviews
 import com.securevision.core.ui.theme.SecureVisionDimens
 import com.securevision.navigation.TopLevelDestination
 
+/** Counts past this show as "99+" rather than widening the drawer row. */
+private const val MAX_BADGE = 99
+
 /**
  * Navigation drawer listing every top-level destination.
  *
@@ -30,6 +34,7 @@ import com.securevision.navigation.TopLevelDestination
  * wordmark a home.
  *
  * @param selected The destination currently shown, or `null` if none is.
+ * @param unreadAlerts Live count of unacknowledged alerts, badged on Alerts.
  * @param onDestinationSelected Invoked with the chosen destination.
  * @param onLogout Invoked from the footer action; clears the session.
  * @param modifier Modifier applied to the sheet.
@@ -37,6 +42,7 @@ import com.securevision.navigation.TopLevelDestination
 @Composable
 fun SecureVisionDrawer(
     selected: TopLevelDestination?,
+    unreadAlerts: Int,
     onDestinationSelected: (TopLevelDestination) -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
@@ -82,6 +88,14 @@ fun SecureVisionDrawer(
                             // Decorative: the adjacent label already names the destination.
                             contentDescription = null,
                         )
+                    },
+                    badge = {
+                        // Only Alerts carries a count, and only when there is one
+                        // to carry: a permanent "0" badge is visual noise that
+                        // trains the eye to skip the badge entirely.
+                        if (destination == TopLevelDestination.ALERTS && unreadAlerts > 0) {
+                            Badge { Text(unreadAlerts.coerceAtMost(MAX_BADGE).toString()) }
+                        }
                     },
                     onClick = { onDestinationSelected(destination) },
                     colors = NavigationDrawerItemDefaults.colors(
@@ -158,6 +172,7 @@ private fun SecureVisionDrawerPreview() {
     PreviewContainer {
         SecureVisionDrawer(
             selected = TopLevelDestination.DASHBOARD,
+            unreadAlerts = 3,
             onDestinationSelected = {},
             onLogout = {},
         )

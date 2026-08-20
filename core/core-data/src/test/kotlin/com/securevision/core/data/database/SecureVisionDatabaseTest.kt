@@ -8,6 +8,7 @@ import com.securevision.core.data.database.dao.EnrolledProfileDao
 import com.securevision.core.data.database.entity.AlertEntity
 import com.securevision.core.data.database.entity.DetectionEventEntity
 import com.securevision.core.data.database.entity.EnrolledProfileEntity
+import com.securevision.core.model.AccessLevel
 import com.securevision.core.model.AlertType
 import com.securevision.core.model.EnrolledProfile
 import com.securevision.core.model.Severity
@@ -210,6 +211,7 @@ class SecureVisionDatabaseTest {
         age = 30,
         photoUri = "file:///profiles/$id.jpg",
         embedding = embedding,
+        accessLevel = AccessLevel.STANDARD,
         isWatchlisted = false,
         createdAt = createdAt,
     )
@@ -223,6 +225,8 @@ class SecureVisionDatabaseTest {
         id = id,
         type = type,
         severity = Severity.HIGH,
+        label = "",
+        estimatedAge = null,
         confidence = 0.9f,
         cameraFacing = "front",
         snapshotUri = null,

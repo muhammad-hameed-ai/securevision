@@ -17,6 +17,7 @@ import com.securevision.core.model.Severity
  * @property type Category of event that raised the alert.
  * @property severity How urgent it is.
  * @property confidence Detector confidence in `0f..1f`.
+ * @property label Detector subject — weapon class or recognised person's name.
  * @property cameraFacing Which camera produced it.
  * @property snapshotUri `file://` URI of the captured frame, or `null`.
  * @property hasBeard Beard attribute when a face was analysed, `null` otherwise.
@@ -43,8 +44,16 @@ data class AlertEntity(
     @ColumnInfo(name = "severity")
     val severity: Severity,
 
+    /** Added in schema v4; rows written before it migrate to an empty string. */
+    @ColumnInfo(name = "label", defaultValue = "")
+    val label: String,
+
     @ColumnInfo(name = "confidence")
     val confidence: Float,
+
+    /** Added in schema v5; rows written before it keep `null` = not assessed. */
+    @ColumnInfo(name = "estimated_age")
+    val estimatedAge: Int?,
 
     @ColumnInfo(name = "camera_facing")
     val cameraFacing: String,

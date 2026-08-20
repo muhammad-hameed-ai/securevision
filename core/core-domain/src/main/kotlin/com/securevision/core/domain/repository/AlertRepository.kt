@@ -41,6 +41,25 @@ interface AlertRepository {
     suspend fun markAllRead()
 
     /**
+     * Looks up one alert.
+     *
+     * @param id Alert identifier.
+     * @return The alert, or `null` if it is no longer stored.
+     */
+    suspend fun getById(id: String): AlertRecord?
+
+    /**
+     * Dismisses one alert.
+     *
+     * Undo is [save] with the same record rather than a soft-delete flag: the row
+     * carries its own id and timestamp, so re-inserting it restores it exactly,
+     * and no query anywhere has to learn to skip tombstones.
+     *
+     * @param id Alert identifier.
+     */
+    suspend fun delete(id: String)
+
+    /**
      * Prunes old alerts as part of the retention policy.
      *
      * @param timestamp Epoch milliseconds; alerts strictly older than this are removed.

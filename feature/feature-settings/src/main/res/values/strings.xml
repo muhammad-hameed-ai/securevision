@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="settings_title">Settings</string>
+
+    <!-- Notifications -->
+    <string name="settings_section_notifications">Notifications</string>
+    <string name="settings_push">System notifications</string>
+    <string name="settings_push_hint">Show alerts in the notification shade. Off means alerts appear only inside the app.</string>
+    <string name="settings_sound">Alarm sound</string>
+    <string name="settings_sound_hint">Play a tone on serious alerts. Uses the alarm volume.</string>
+    <string name="settings_vibration">Vibration</string>
+    <string name="settings_vibration_hint">Vibrate on serious alerts.</string>
+
+    <!-- Detection -->
+    <string name="settings_section_detection">Detection</string>
+    <string name="settings_face">Face recognition</string>
+    <string name="settings_face_hint">Identify enrolled people by name.</string>
+    <string name="settings_weapon">Weapon detection</string>
+    <string name="settings_weapon_hint">Raise a critical alarm when a weapon is seen.</string>
+    <string name="settings_motion">Motion detection</string>
+    <string name="settings_motion_hint">Log movement in an otherwise still scene. Never sounds an alarm.</string>
+    <string name="settings_attributes">Attribute analysis</string>
+    <string name="settings_attributes_hint">Infer emotion, beard and mask. Costs an extra pass per face.</string>
+    <string name="settings_confidence">Match threshold</string>
+    <string name="settings_confidence_hint">How similar a face must be before it counts as a match. Raise it if the app confuses two people; lower it if it fails to recognise someone it should.</string>
+
+    <!-- Camera -->
+    <string name="settings_section_camera">Camera</string>
+    <string name="settings_resolution_standard">Standard (480p)</string>
+    <string name="settings_resolution_hd">HD (720p)</string>
+    <string name="settings_resolution_fhd">Full HD (1080p)</string>
+
+    <!-- Data -->
+    <string name="settings_section_data">Data</string>
+    <string name="settings_retention">Keep history for</string>
+    <string name="settings_retention_days">%1$d days</string>
+    <string name="settings_clear_data">Clear activity data</string>
+    <string name="settings_clear_dialog_title">Clear activity data?</string>
+    <string name="settings_clear_dialog_body">Deletes every alert, detection event and recording on this device.\n\nEnrolled people are kept — their faces are not affected. To remove someone, use the People screen.</string>
+    <string name="settings_clear_confirm">Clear</string>
+    <string name="settings_cancel">Cancel</string>
+    <string name="settings_data_cleared">Activity data cleared</string>
+    <string name="settings_data_clear_failed">Could not clear the data</string>
+
+    <!-- Appearance -->
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_dark_mode">Dark theme</string>
+    <string name="settings_dark_mode_hint">Easier on the eyes when monitoring in a dark room.</string>
+
+    <!-- About -->
+    <string name="settings_section_about">About</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_permissions">Permissions</string>
+    <string name="settings_permissions_value">Camera, vibration, notifications</string>
+    <string name="settings_on_device">All recognition, weapon and motion analysis runs on this phone. The app has no internet permission and cannot send your data anywhere.</string>
+
+</resources>

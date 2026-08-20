@@ -21,4 +21,17 @@ interface ProfilePhotoStore {
      * @return A `file://` URI inside the app's private storage.
      */
     suspend fun saveProfilePhoto(bitmap: Bitmap): String
+
+    /**
+     * Removes a photo that is no longer referenced.
+     *
+     * Used when re-enrolling replaces a profile's crop. Deleting the row is the
+     * repository's job; this exists for the case where the row survives and only
+     * the image is superseded.
+     *
+     * @param uri A URI previously returned by [saveProfilePhoto].
+     * @return `true` if a file was removed. A `false` means the file was already
+     *   gone, which is not worth failing an enrolment over.
+     */
+    suspend fun deleteProfilePhoto(uri: String): Boolean
 }

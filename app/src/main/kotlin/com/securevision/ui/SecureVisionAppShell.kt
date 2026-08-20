@@ -26,6 +26,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.securevision.MainUiState
 import com.securevision.R
 import com.securevision.core.ui.component.SVTopBar
@@ -118,6 +120,11 @@ private fun ShellContent(
     val currentTopLevel = navState.currentTopLevelDestination
     val showChrome = currentTopLevel != null
 
+    // Observed at the shell so the badge is live wherever the user is, rather
+    // than only refreshing when the Alerts screen happens to be composed.
+    val shellViewModel: AppShellViewModel = hiltViewModel()
+    val unreadAlerts by shellViewModel.unreadAlerts.collectAsStateWithLifecycle()
+
     ModalNavigationDrawer(
         modifier = modifier,
         drawerState = drawerState,
@@ -125,6 +132,7 @@ private fun ShellContent(
         drawerContent = {
             SecureVisionDrawer(
                 selected = currentTopLevel,
+                unreadAlerts = unreadAlerts,
                 onDestinationSelected = { destination ->
                     coroutineScope.launch { drawerState.close() }
                     navState.navigateToTopLevel(destination)

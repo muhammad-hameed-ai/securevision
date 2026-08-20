@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="profiles_title">People</string>
+    <string name="profiles_add">Add person</string>
+    <string name="profiles_edit_title">Edit person</string>
+    <string name="profiles_save">Save</string>
+
+    <!-- List -->
+    <string name="profiles_search_label">Search by name</string>
+    <string name="profiles_filter_watchlist">Watchlist only</string>
+    <string name="profiles_age_years">%1$d years old</string>
+    <string name="profiles_face_enrolled">Face enrolled</string>
+    <string name="profiles_watchlisted">On the watchlist</string>
+    <string name="profiles_delete_description">Delete %1$s</string>
+
+    <string name="profiles_empty_title">Nobody enrolled yet</string>
+    <string name="profiles_empty_subtitle">Add someone and the live camera will recognise them by name instead of flagging them as unknown.</string>
+    <string name="profiles_no_matches_title">No matches</string>
+    <string name="profiles_no_matches_subtitle">No enrolled person matches those filters.</string>
+
+    <!-- Access levels -->
+    <string name="profiles_access_standard">Standard</string>
+    <string name="profiles_access_restricted">Restricted</string>
+    <string name="profiles_access_vip">VIP</string>
+
+    <!-- Delete -->
+    <string name="profiles_delete_title">Remove %1$s?</string>
+    <string name="profiles_delete_body">This deletes their face data from this device. It is not backed up anywhere, so the only way to restore it is to enrol them again in person.</string>
+    <string name="profiles_delete_confirm">Delete</string>
+    <string name="action_cancel">Cancel</string>
+
+    <!-- Enrolment form -->
+    <string name="profiles_field_name">Name</string>
+    <string name="profiles_field_age">Age</string>
+    <string name="profiles_field_access">Access level</string>
+    <string name="profiles_field_watchlist">Escalate sightings</string>
+    <string name="profiles_field_watchlist_hint">Treat seeing this person as worth an alert.</string>
+    <string name="profiles_capture">Capture</string>
+    <string name="profiles_retake">Retake</string>
+    <string name="profiles_flip_camera">Flip</string>
+    <string name="profiles_choose_gallery">Gallery</string>
+    <string name="profiles_aligned_preview">The aligned face crop that will be enrolled</string>
+    <string name="profiles_face_enrolled_confirm">Face enrolled. This is exactly the crop the recogniser will compare against.</string>
+
+    <!-- Validation -->
+    <string name="profiles_error_required">Required</string>
+    <string name="profiles_error_age_range">Age must be between 1 and 120</string>
+    <string name="profiles_error_no_face">No face found. Fill more of the frame and face the camera.</string>
+    <string name="profiles_error_multiple_faces">More than one face in shot. Enrol one person at a time.</string>
+    <string name="profiles_error_poor_quality">Too small or too blurred. Move closer and hold still.</string>
+    <string name="profiles_error_landmarks">Could not locate the eyes and mouth. Face the camera straight on.</string>
+    <string name="profiles_error_model">The face model could not be loaded, so nobody can be enrolled.</string>
+    <string name="profiles_preparing_model">Preparing the face model…</string>
+
+</resources>

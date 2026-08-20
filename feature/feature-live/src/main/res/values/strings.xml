@@ -35,6 +35,13 @@
     <!-- Alarm -->
     <string name="live_silence_alarm">Silence alarm</string>
 
+    <!-- Recording -->
+    <string name="live_record">Record</string>
+    <string name="live_torch_on">Turn on the light</string>
+    <string name="live_torch_off">Turn off the light</string>
+    <string name="live_recording_no_overlay">Clips record the camera feed. Detection boxes are not included in the video.</string>
+    <string name="live_recording_detection_paused">This device cannot detect and record at the same time. Detection is paused while recording.</string>
+
     <!-- Enrolment, temporary for Phase 4 -->
     <string name="live_enrol_action">Enrol face</string>
     <string name="live_enrol_title">Enrol this face</string>

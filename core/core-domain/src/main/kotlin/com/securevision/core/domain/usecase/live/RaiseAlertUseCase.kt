@@ -62,8 +62,8 @@ class RaiseAlertUseCase @Inject constructor(
             vibrationEnabled = settings.vibrationEnabled,
         )
 
-        val notification = if (settings.pushNotificationsEnabled) {
-            notifier.post(record, parameters.label)
+        val notification = if (settings.pushNotificationsEnabled && parameters.notify) {
+            notifier.post(record)
         } else {
             NotificationOutcome.POSTED
         }
@@ -82,11 +82,14 @@ class RaiseAlertUseCase @Inject constructor(
         id = UUID.randomUUID().toString(),
         type = type,
         severity = severity,
+        label = label,
         confidence = confidence,
         cameraFacing = cameraFacing,
         snapshotUri = snapshotUri,
         // Passed straight through, nulls included. null means "not assessed";
         // coercing it to false would be a claim about a person nothing examined.
+        // The same holds for age: no model, no number.
+        estimatedAge = attributes.age,
         hasBeard = attributes.hasBeard,
         hasMask = attributes.hasMask,
         timestamp = timestamp,

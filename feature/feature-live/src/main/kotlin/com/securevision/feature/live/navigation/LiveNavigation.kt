@@ -19,16 +19,15 @@ fun NavGraphBuilder.liveScreen() {
     composable(route = LiveRoutes.LIVE) {
         val viewModel: LiveCameraViewModel = hiltViewModel()
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-        val enrolmentEvent by viewModel.enrolmentEvent.collectAsStateWithLifecycle()
 
         LiveCameraScreen(
             uiState = uiState,
-            enrolmentEvent = enrolmentEvent,
             onFrame = viewModel::onFrame,
             onFlipCamera = viewModel::flipCamera,
-            onEnrol = viewModel::enrolCurrentFace,
             onSilenceAlarm = viewModel::silenceAlarm,
-            onEnrolmentEventConsumed = viewModel::consumeEnrolmentEvent,
+            onRecordingStateChange = viewModel::onRecordingStateChange,
+            onRecordingFinished = viewModel::onRecordingFinished,
+            onCameraBound = viewModel::onCameraBound,
         )
     }
 }

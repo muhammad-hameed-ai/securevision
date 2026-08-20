@@ -60,7 +60,10 @@ abstract class SecureVisionDatabase : RoomDatabase() {
          *
          * v1 — Phase 2: profiles, alerts, detection events, recordings.
          * v2 — Phase 3: the app-login account.
+         * v3 — Phase 6: profile access level.
+         * v4 — Phase 7: alert label, so a recognised person can be named.
+         * v5 — Phase 7: estimated age on an alert.
          */
-        const val VERSION = 2
+        const val VERSION = 5
     }
 }

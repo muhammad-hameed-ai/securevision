@@ -43,6 +43,14 @@ class AlertRepositoryImpl @Inject constructor(
         dao.markAllRead()
     }
 
+    override suspend fun getById(id: String): AlertRecord? = withContext(dispatcherProvider.io) {
+        dao.getById(id)?.toDomain()
+    }
+
+    override suspend fun delete(id: String) = withContext(dispatcherProvider.io) {
+        dao.deleteById(id)
+    }
+
     override suspend fun deleteOlderThan(timestamp: Long): Int =
         withContext(dispatcherProvider.io) { dao.deleteOlderThan(timestamp) }
 }

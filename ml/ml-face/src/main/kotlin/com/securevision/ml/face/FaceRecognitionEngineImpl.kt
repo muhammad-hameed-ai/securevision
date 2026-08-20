@@ -84,9 +84,17 @@ class FaceRecognitionEngineImpl @Inject constructor(
         // Stage 1 — detect.
         val detections = detector.detect(frame.bitmap)
 
-        voter.retainOnly(detections.map { it.trackingId }.toSet())
+        // Largest first, then capped. ML Kit will happily return a dozen
+        // candidates from a cluttered scene; the biggest few are the ones a person
+        // is actually standing in front of the camera to be recognised as, and
+        // drawing the rest turns the overlay into noise.
+        val considered = detections
+            .sortedByDescending { it.boundingBox.width * it.boundingBox.height }
+            .take(MAX_FACES)
 
-        detections.map { detection ->
+        voter.retainOnly(considered.map { it.trackingId }.toSet())
+
+        considered.map { detection ->
             resolve(detection, frame.bitmap, profiles, settings, retainAlignedCrops)
         }
     }
@@ -167,11 +175,46 @@ class FaceRecognitionEngineImpl @Inject constructor(
             alignedCrop = null,
         )
 
-        // Stage 2 — quality gate. A rejected face is still drawn, so the operator
-        // can see it was noticed, but it never reaches the embedder.
-        if (qualityGate.assess(detection) is FaceQuality.Rejected) return unresolved()
+        // Stage 2 — quality gate, and it runs FIRST.
+        //
+        // It used to sit behind the empty-profile guard, which meant that with
+        // nobody enrolled every raw detection was reported as a confirmed
+        // stranger — hands, corners of objects, whatever ML Kit offered — and the
+        // screen filled with red boxes. A region that fails the gate is not a
+        // stranger; it is not a usable face at all, and neither verdict applies.
+        val frameAspect = frame.width.toFloat() / frame.height.toFloat()
+        val quality = qualityGate.assess(detection, frameAspect)
+
+        if (quality is FaceQuality.Rejected) {
+            // Logged per face because a rejection is otherwise invisible — the
+            // overlay shows the same unresolved box whichever check failed, and
+            // that is how a too-strict roll limit hid as "landscape doesn't work".
+            Log.d(
+                TAG,
+                "gate REJECTED ${quality.reason} | " +
+                    "${if (frameAspect > 1f) "landscape" else "portrait"} " +
+                    "${frame.width}x${frame.height} | " +
+                    "relWidth=${"%.3f".format(detection.boundingBox.width)} " +
+                    "yaw=${"%.1f".format(detection.yawDegrees)} " +
+                    "roll=${"%.1f".format(detection.rollDegrees)}",
+            )
+            return unresolved()
+        }
 
         val landmarks = detection.landmarks ?: return unresolved()
+
+        // Nobody enrolled means nobody can be recognised — full stop, whatever the
+        // matcher or the voter might otherwise conclude. Stated here rather than
+        // relied upon downstream because "green with an empty database" is the
+        // worst failure this screen can produce.
+        if (profiles.isEmpty()) {
+            return detection.toRecognised(
+                status = MatchStatus.UNKNOWN,
+                profile = null,
+                confidence = 0f,
+                alignedCrop = null,
+            )
+        }
 
         // Recognition is off. Report PROCESSING rather than UNKNOWN so the UI
         // never claims a stranger it has not actually assessed.
@@ -210,12 +253,31 @@ class FaceRecognitionEngineImpl @Inject constructor(
         )
 
         return when (vote) {
-            is VoteResult.Known -> detection.toRecognised(
-                status = MatchStatus.KNOWN,
-                profile = profiles.firstOrNull { it.id == vote.profileId },
-                confidence = score,
-                alignedCrop = retainedCrop,
-            )
+            is VoteResult.Known -> {
+                // A KNOWN verdict that cannot name anyone is a contradiction, and
+                // the overlay would paint it green. If the voted profile is no
+                // longer in the list — deleted mid-session — report UNKNOWN, which
+                // is the truthful answer: this face matches nobody enrolled.
+                val profile = profiles.firstOrNull { it.id == vote.profileId }
+
+                if (profile == null) {
+                    Log.w(TAG, "voted profile ${vote.profileId} is not enrolled; reporting UNKNOWN")
+
+                    detection.toRecognised(
+                        status = MatchStatus.UNKNOWN,
+                        profile = null,
+                        confidence = score,
+                        alignedCrop = retainedCrop,
+                    )
+                } else {
+                    detection.toRecognised(
+                        status = MatchStatus.KNOWN,
+                        profile = profile,
+                        confidence = score,
+                        alignedCrop = retainedCrop,
+                    )
+                }
+            }
             is VoteResult.Unknown -> detection.toRecognised(
                 status = MatchStatus.UNKNOWN,
                 profile = null,
@@ -251,5 +313,15 @@ class FaceRecognitionEngineImpl @Inject constructor(
 
     private companion object {
         const val TAG = "FaceRecognitionEngine"
+
+        /**
+         * How many faces are considered in one frame.
+         *
+         * A cap, not a statement about what the camera can see. Real use is one
+         * to three people in front of a phone; beyond that the extra candidates
+         * ML Kit offers from a cluttered scene are far more likely to be false
+         * positives than a queue of people waiting to be recognised.
+         */
+        const val MAX_FACES = 4
     }
 }

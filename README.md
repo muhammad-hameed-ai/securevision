@@ -4,11 +4,19 @@ An Android security monitoring app with **on-device AI**. Live camera detection 
 people, faces, weapons and motion, with recognition of enrolled individuals — all
 inference runs on the phone.
 
-> **Status: Phase 5 of 7 complete** (5a + 5b). Live camera face recognition works
-> on hardware: an enrolled face draws a green box with a name and score, an
+> **Status: Phase 6 of 7 complete.** Live camera face recognition works on
+> hardware: an enrolled face draws a green box with a name and score, an
 > unenrolled one draws red. Motion, the attribute framework, coarse emotion,
-> snapshots, a synthesized alarm, haptics and system notifications are live.
-> Recording and the remaining galleries are Phases 6–7.
+> snapshots, a synthesized alarm, haptics and system notifications are live, as
+> are the People, Alerts and Recordings screens. Settings and History are Phase 7.
+>
+> **Clips record the camera feed only — detection boxes are not burned in.**
+> CameraX writes the sensor stream while the overlay is a Compose layer above the
+> preview, and no CameraX API composites one into the other. Doing it properly
+> needs a custom OpenGL pipeline feeding `MediaCodec`; that is future work, and
+> the recordings gallery says so on screen rather than letting anyone assume the
+> boxes were captured. Clips are also silent by design — audio would require
+> `RECORD_AUDIO`, and this app ships with exactly three permissions.
 >
 > **The weapon detector is scaffolded and inert.** Detection, letterboxing,
 > non-max suppression and class mapping are written and tested, but no
@@ -255,13 +263,19 @@ operator's account and every enrolled profile, none of which exists anywhere els
 | 4 | CameraX live view; detection, alignment, recognition, overlays, quick enrol | ✅ |
 | 5a | Motion, attribute framework, coarse emotion, snapshots, weapon scaffolding | ✅ |
 | 5b | Alarm engine, haptics and notifications behind one shared alert gate | ✅ |
-| 6 | Recording with overlays; alerts, history and recordings galleries | |
-| 7 | Settings, retention, polish | |
+| 6 | People, Alerts and Recordings screens; in-app video capture | ✅ |
+| 7 | Settings, History, retention, polish | |
 
-**Phase 4 carries one temporary piece.** "Enrol face" on the live screen exists so
-the recognition path is testable at all — without an enrolled profile, matching,
-the margin rule and voting would all ship unexercised. The polished enrolment UI
-belongs to Phase 6, and must **reuse** `FaceRecognitionEngine.embedForEnrolment`
-rather than growing a second embedding path. Two paths would drift, and an
-enrolment embedded differently from the queries compared against it is itself a
-cause of uniformly low similarity.
+**One embedding path, enforced by a test.** Phase 4's temporary "Enrol face"
+button on the live screen is gone; enrolment now lives on the People screen. What
+survived the rewrite is the rule that matters: `CaptureEnrolmentUseCase` is the
+only code in the repository that calls
+`FaceRecognitionEngine.embedForEnrolment`, so an enrolment embedding is produced
+by exactly the alignment and inference that recognition uses.
+
+`SingleEmbeddingPathTest` scans every Kotlin source in the tree and fails if a
+second call site appears. A mock would only prove the one use case behaves; only
+reading the tree proves nobody has added another caller. Two paths would drift,
+and an enrolment embedded differently from the queries compared against it is
+itself a cause of uniformly low similarity — the 0.23-for-everyone failure this
+pipeline exists to prevent.

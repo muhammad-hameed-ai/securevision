@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="alerts_title">Alerts</string>
+    <string name="alerts_mark_all_read">Mark all read</string>
+    <string name="alerts_dismissed">Alert dismissed</string>
+    <string name="alerts_undo">Undo</string>
+
+    <!-- Filters -->
+    <string name="alerts_filter_all">All</string>
+    <string name="alerts_filter_unread">Unread</string>
+    <string name="alerts_filter_unknown">Unknown</string>
+    <string name="alerts_filter_weapon">Weapon</string>
+    <string name="alerts_filter_motion">Motion</string>
+    <string name="alerts_filter_recognised">Recognised</string>
+    <string name="alerts_filter_critical">Critical</string>
+
+    <!-- Alert types -->
+    <string name="alerts_type_weapon">Weapon detected</string>
+    <string name="alerts_type_unknown">Unrecognised person</string>
+    <string name="alerts_type_motion">Movement</string>
+    <string name="alerts_type_known">Recognised: %1$s</string>
+
+    <!-- Card -->
+    <string name="alerts_card_subtitle">%1$s · %2$s camera · %3$d%%</string>
+    <string name="alerts_camera_front">Front</string>
+    <string name="alerts_camera_back">Back</string>
+
+    <!-- Attributes. "unknown" is never "No": null means nothing examined it. -->
+    <string name="alerts_attribute_beard">Beard</string>
+    <string name="alerts_attribute_mask">Mask</string>
+    <string name="alerts_attribute_yes">%1$s: yes</string>
+    <string name="alerts_attribute_no">%1$s: no</string>
+    <string name="alerts_attribute_unknown">%1$s: unknown</string>
+
+    <!-- Age. "unknown" until an age model is installed — never a guessed band. -->
+    <string name="alerts_age_unknown">Age: unknown</string>
+    <string name="alerts_age_estimate">Age: ~%1$d (%2$s)</string>
+    <string name="alerts_age_child">Child</string>
+    <string name="alerts_age_teen">Teen</string>
+    <string name="alerts_age_young_adult">Young adult</string>
+    <string name="alerts_age_adult">Adult</string>
+    <string name="alerts_age_senior">Senior</string>
+
+    <!-- Empty states -->
+    <string name="alerts_empty_title">All clear</string>
+    <string name="alerts_empty_subtitle">Nothing has been flagged. Alerts raised by the live camera appear here.</string>
+    <string name="alerts_no_matches_title">Nothing in this filter</string>
+    <string name="alerts_no_matches_subtitle">Other alerts exist — try a different filter.</string>
+
+    <!-- Detail -->
+    <string name="alerts_detail_title">Alert</string>
+    <string name="alerts_detail_snapshot">Snapshot captured with this alert</string>
+    <string name="alerts_detail_no_snapshot">No snapshot was saved for this alert.</string>
+    <string name="alerts_detail_type">Type</string>
+    <string name="alerts_detail_severity">Severity</string>
+    <string name="alerts_detail_time">Time</string>
+    <string name="alerts_detail_camera">Camera</string>
+    <string name="alerts_detail_confidence">Confidence</string>
+    <string name="alerts_detail_attributes">Attributes</string>
+    <string name="alerts_detail_missing">This alert is no longer available.</string>
+
+</resources>

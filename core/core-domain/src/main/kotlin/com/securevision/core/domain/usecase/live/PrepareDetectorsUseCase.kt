@@ -51,6 +51,20 @@ class PrepareDetectorsUseCase @Inject constructor(
     suspend fun resetMotion() {
         motionEngine.reset()
     }
+
+    /**
+     * Discards multi-frame vote history.
+     *
+     * Also a camera-flip concern, and a subtler one. Vote history is keyed by
+     * detector tracking id, and the new lens restarts those ids from zero. The
+     * voter prunes ids that are absent, but when the new lens reuses id 1 — which
+     * it usually does — that history is *kept* and a different person inherits
+     * the previous person's votes, briefly putting the wrong name on the wrong
+     * face.
+     */
+    fun resetTracking() {
+        faceEngine.resetTracking()
+    }
 }
 
 /**

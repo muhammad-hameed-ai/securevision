@@ -8,8 +8,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.History
@@ -48,6 +48,7 @@ import com.securevision.feature.dashboard.component.SystemStatusCard
  * @param onNavigateToLive Opens Live View.
  * @param onNavigateToAlerts Opens the alerts list.
  * @param onNavigateToProfiles Opens the enrolled profiles list.
+ * @param onNavigateToHistory Opens the detection history.
  * @param onNavigateToSettings Opens settings.
  * @param modifier Modifier applied to the screen.
  */
@@ -57,6 +58,7 @@ fun DashboardScreen(
     onNavigateToLive: () -> Unit,
     onNavigateToAlerts: () -> Unit,
     onNavigateToProfiles: () -> Unit,
+    onNavigateToHistory: () -> Unit,
     onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -75,6 +77,7 @@ fun DashboardScreen(
             onNavigateToLive = onNavigateToLive,
             onNavigateToAlerts = onNavigateToAlerts,
             onNavigateToProfiles = onNavigateToProfiles,
+            onNavigateToHistory = onNavigateToHistory,
             onNavigateToSettings = onNavigateToSettings,
             modifier = modifier,
         )
@@ -97,50 +100,75 @@ private fun ContentState(
     onNavigateToLive: () -> Unit,
     onNavigateToAlerts: () -> Unit,
     onNavigateToProfiles: () -> Unit,
+    onNavigateToHistory: () -> Unit,
     onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(PaddingValues(SecureVisionDimens.spacingMedium)),
-        verticalArrangement = Arrangement.spacedBy(SecureVisionDimens.spacingMedium),
-    ) {
-        SystemStatusCard()
+    // The button is pinned and only the alert list scrolls. Previously the whole
+    // screen was one scrolling Column, so the primary action — the one thing an
+    // operator reaches for in a hurry — slid off the bottom as history grew.
+    Column(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.padding(
+                start = SecureVisionDimens.spacingMedium,
+                end = SecureVisionDimens.spacingMedium,
+                top = SecureVisionDimens.spacingMedium,
+            ),
+            verticalArrangement = Arrangement.spacedBy(SecureVisionDimens.spacingMedium),
+        ) {
+            SystemStatusCard()
 
-        StatCards(
-            content = content,
-            onAlertsClick = onNavigateToAlerts,
-            onProfilesClick = onNavigateToProfiles,
-        )
-
-        SectionHeading(text = stringResource(R.string.dashboard_quick_actions))
-
-        QuickActionsRow(
-            onLiveClick = onNavigateToLive,
-            onAlertsClick = onNavigateToAlerts,
-            onProfilesClick = onNavigateToProfiles,
-            onSettingsClick = onNavigateToSettings,
-        )
-
-        SectionHeading(text = stringResource(R.string.dashboard_recent_alerts))
-
-        if (content.hasNoAlerts) {
-            SVEmptyState(
-                icon = Icons.Outlined.NotificationsOff,
-                title = stringResource(R.string.dashboard_recent_alerts_empty_title),
-                subtitle = stringResource(R.string.dashboard_recent_alerts_empty_subtitle),
+            StatCards(
+                content = content,
+                onAlertsClick = onNavigateToAlerts,
+                onProfilesClick = onNavigateToProfiles,
+                onEventsClick = onNavigateToHistory,
             )
-        } else {
-            content.recentAlerts.forEach { alert ->
-                RecentAlertRow(alert = alert, onClick = onNavigateToAlerts)
+
+            SectionHeading(text = stringResource(R.string.dashboard_quick_actions))
+
+            QuickActionsRow(
+                onLiveClick = onNavigateToLive,
+                onAlertsClick = onNavigateToAlerts,
+                onProfilesClick = onNavigateToProfiles,
+                onSettingsClick = onNavigateToSettings,
+            )
+
+            SectionHeading(text = stringResource(R.string.dashboard_recent_alerts))
+        }
+
+        // weight(1f) hands the list every pixel the fixed content does not use,
+        // and lazy composition means a hundred alerts do not all compose to show
+        // the five that fit.
+        Box(modifier = Modifier.weight(1f).fillMaxSize()) {
+            if (content.hasNoAlerts) {
+                SVEmptyState(
+                    icon = Icons.Outlined.NotificationsOff,
+                    title = stringResource(R.string.dashboard_recent_alerts_empty_title),
+                    subtitle = stringResource(R.string.dashboard_recent_alerts_empty_subtitle),
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(
+                        horizontal = SecureVisionDimens.spacingMedium,
+                        vertical = SecureVisionDimens.spacingSmall,
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(SecureVisionDimens.spacingSmall),
+                ) {
+                    items(items = content.recentAlerts, key = AlertRecord::id) { alert ->
+                        RecentAlertRow(alert = alert, onClick = onNavigateToAlerts)
+                    }
+                }
             }
         }
 
         SVPrimaryButton(
             text = stringResource(R.string.dashboard_open_live_view),
             onClick = onNavigateToLive,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(SecureVisionDimens.spacingMedium),
         )
     }
 }
@@ -156,6 +184,7 @@ private fun StatCards(
     content: DashboardUiState.Content,
     onAlertsClick: () -> Unit,
     onProfilesClick: () -> Unit,
+    onEventsClick: () -> Unit,
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(SecureVisionDimens.spacingSmall)) {
         SVStatCard(
@@ -179,6 +208,7 @@ private fun StatCards(
             value = content.eventCount.toString(),
             label = stringResource(R.string.dashboard_stat_events),
             modifier = Modifier.weight(1f),
+            onClick = onEventsClick,
         )
     }
 }
@@ -207,6 +237,7 @@ private fun DashboardScreenEmptyPreview() {
             onNavigateToLive = {},
             onNavigateToAlerts = {},
             onNavigateToProfiles = {},
+            onNavigateToHistory = {},
             onNavigateToSettings = {},
         )
     }
@@ -239,6 +270,7 @@ private fun DashboardScreenPopulatedPreview() {
             onNavigateToLive = {},
             onNavigateToAlerts = {},
             onNavigateToProfiles = {},
+            onNavigateToHistory = {},
             onNavigateToSettings = {},
         )
     }

@@ -5,9 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.securevision.core.common.extension.stateInWhileSubscribed
 import com.securevision.core.common.result.Result
 import com.securevision.core.common.result.fold
+import com.securevision.core.common.result.getOrDefault
 import com.securevision.core.domain.usecase.auth.LogoutUseCase
 import com.securevision.core.domain.usecase.auth.ObserveAuthStateUseCase
 import com.securevision.core.domain.usecase.invoke
+import com.securevision.core.domain.usecase.settings.ObserveSettingsUseCase
+import com.securevision.core.model.AppSettings
 import com.securevision.core.model.AuthSession
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -26,6 +29,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class MainViewModel @Inject constructor(
     observeAuthState: ObserveAuthStateUseCase,
+    observeSettings: ObserveSettingsUseCase,
     private val logoutUseCase: LogoutUseCase,
 ) : ViewModel() {
 
@@ -35,6 +39,21 @@ class MainViewModel @Inject constructor(
         .stateInWhileSubscribed(
             scope = viewModelScope,
             initialValue = MainUiState.Loading,
+        )
+
+    /**
+     * Whether to render the dark theme.
+     *
+     * Observed at the top of the tree so the Settings toggle recolours the whole
+     * app the moment it is flipped, rather than on the next launch. Defaults to
+     * dark while the store is being read — this is a monitoring app used in dark
+     * rooms, and starting light would flash the operator.
+     */
+    val darkMode: StateFlow<Boolean> = observeSettings(Unit)
+        .map { result -> result.getOrDefault(AppSettings()).darkMode }
+        .stateInWhileSubscribed(
+            scope = viewModelScope,
+            initialValue = true,
         )
 
     /**
