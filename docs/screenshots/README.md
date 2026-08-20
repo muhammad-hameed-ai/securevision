@@ -1,37 +1,39 @@
 # Screenshots
 
-The README embeds eight images from this folder. Drop your device captures here
-using **exactly** these filenames, or the images will render as broken links:
+Device captures embedded in the root README's Screenshots table.
 
-| Filename | Screen |
+| File | Screen |
 |---|---|
-| `dashboard.png` | Dashboard with the stat cards |
-| `live_camera.png` | Live view with a face box |
-| `profiles.png` | People list |
-| `alerts.png` | Alerts gallery |
-| `scan_photo.png` | Enrolling from a gallery photo |
-| `add_profile.png` | Add Person with the aligned crop preview |
-| `weapon_detect.png` | Live view with an orange weapon box |
-| `settings.png` | Settings |
+| `dashboard.jpeg` | Dashboard with the stat cards |
+| `live_detection.jpeg` | Live view with a face box |
+| `profiles.jpeg` | People list |
+| `alerts.jpeg` | Alerts gallery |
+| `hero_face_and_weapon.jpeg` | Face and weapon detected in the same frame |
+| `recordings.jpeg` | Recordings |
+| `settings.jpeg` | Settings |
 
-## Taking them
+The root README references these by exact filename. Renaming one breaks its
+image, so if you replace a capture, keep the name.
 
-```
-adb exec-out screencap -p > dashboard.png
-```
+## JPEG is fine — don't convert
 
-Or use the phone's own screenshot gesture and copy the files across.
+These are camera-heavy screenshots, and JPEG is the right format for them.
+Re-encoding to PNG would not recover any detail already lost in the JPEG pass;
+it would only wrap the same pixels in a larger file. GitHub renders both
+identically.
 
-## Before you commit
+## Two slots still empty
 
-These go into a **public** repository. Check each image for anything you would
-not publish:
+The README table has room for eight; seven are filled. Missing:
 
-- **Faces of real people.** The People screen and any live capture will show
-  them. Use your own face, or a printed photo of a stock portrait.
-- **Real names** on enrolled profiles.
-- The **status bar** — carrier, and any notification previews.
+- **Photo Scan** — enrolling from a gallery photo
+- **Add Profile** — the Add Person screen with the aligned crop preview
 
-PNG at phone resolution is typically 200–600 KB each, which is fine to commit.
-If a capture runs to several megabytes, scale it down: the README renders them
-at 180 px wide, so nothing larger than about 720 px is doing any work.
+Add `scan_photo.jpeg` and `add_profile.jpeg` here and put them in the table's
+last two cells.
+
+## Before adding more
+
+This repository is public. Check each capture for anything you would not
+publish: faces of people who have not agreed to appear, real names on enrolled
+profiles, and the status bar.

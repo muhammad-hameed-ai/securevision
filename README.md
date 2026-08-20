@@ -150,38 +150,36 @@
 <table>
 <tr>
 <td align="center" width="25%">
-<img src="docs/screenshots/dashboard.png" width="180" alt="Dashboard"/>
+<img src="docs/screenshots/dashboard.jpeg" width="180" alt="Dashboard"/>
 <br/><sub><b>🏠 Dashboard</b></sub>
 </td>
 <td align="center" width="25%">
-<img src="docs/screenshots/live_camera.png" width="180" alt="Live Camera"/>
+<img src="docs/screenshots/live_detection.jpeg" width="180" alt="Live Camera"/>
 <br/><sub><b>🎥 Live Camera</b></sub>
 </td>
 <td align="center" width="25%">
-<img src="docs/screenshots/profiles.png" width="180" alt="Profiles"/>
+<img src="docs/screenshots/profiles.jpeg" width="180" alt="Profiles"/>
 <br/><sub><b>👥 Profiles</b></sub>
 </td>
 <td align="center" width="25%">
-<img src="docs/screenshots/alerts.png" width="180" alt="Alerts"/>
+<img src="docs/screenshots/alerts.jpeg" width="180" alt="Alerts"/>
 <br/><sub><b>🚨 Alerts</b></sub>
 </td>
 </tr>
 <tr>
 <td align="center" width="25%">
-<img src="docs/screenshots/scan_photo.png" width="180" alt="Scan Photo"/>
-<br/><sub><b>📷 Photo Scan</b></sub>
-</td>
-<td align="center" width="25%">
-<img src="docs/screenshots/add_profile.png" width="180" alt="Add Profile"/>
-<br/><sub><b>➕ Add Profile</b></sub>
-</td>
-<td align="center" width="25%">
-<img src="docs/screenshots/weapon_detect.png" width="180" alt="Weapon Detection"/>
+<img src="docs/screenshots/hero_face_and_weapon.jpeg" width="180" alt="Face and weapon detected together"/>
 <br/><sub><b>🔫 Weapon Alert</b></sub>
 </td>
 <td align="center" width="25%">
-<img src="docs/screenshots/settings.png" width="180" alt="Settings"/>
+<img src="docs/screenshots/recordings.jpeg" width="180" alt="Recordings"/>
+<br/><sub><b>🎬 Recordings</b></sub>
+</td>
+<td align="center" width="25%">
+<img src="docs/screenshots/settings.jpeg" width="180" alt="Settings"/>
 <br/><sub><b>⚙️ Settings</b></sub>
+</td>
+<td align="center" width="25%">
 </td>
 </tr>
 </table>
