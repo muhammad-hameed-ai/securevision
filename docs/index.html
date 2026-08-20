@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SecureVision — On-Device AI Security for Android</title>
+<meta name="description" content="SecureVision: an offline Android security app with on-device face recognition, custom-trained weapon detection, and motion sensing. Built with Kotlin, Jetpack Compose, and TensorFlow Lite." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0A1628; --bg2:#0d1b30; --surface:#16213A; --surface2:#1c2b48;
+    --primary:#00C9A7; --green:#00D97E; --red:#FF3B30; --orange:#FF6B00; --amber:#FFB300;
+    --text:#F5F8FC; --muted:#9fb0c7; --border:rgba(255,255,255,.08);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 24px}
+  a{color:var(--primary);text-decoration:none}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:50;background:rgba(10,22,40,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{font-weight:800;font-size:1.2rem;display:flex;align-items:center;gap:8px}
+  .brand span{color:var(--primary)}
+  .nav-links{display:flex;gap:28px}
+  .nav-links a{color:var(--muted);font-weight:500;font-size:.95rem;transition:color .2s}
+  .nav-links a:hover{color:var(--text)}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border-radius:10px;font-weight:600;font-size:.95rem;transition:transform .15s,box-shadow .2s;cursor:pointer;border:none}
+  .btn-primary{background:var(--primary);color:#06231d;box-shadow:0 6px 20px rgba(0,201,167,.3)}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,201,167,.45)}
+  .btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+  .btn-ghost:hover{background:var(--surface);border-color:var(--primary)}
+  @media(max-width:720px){.nav-links{display:none}}
+
+  /* hero */
+  header{padding:90px 0 70px;position:relative;text-align:center;overflow:hidden}
+  header::before{content:"";position:absolute;top:-30%;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,rgba(0,201,167,.12),transparent 60%);pointer-events:none}
+  .badge-pill{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);color:var(--primary);padding:7px 16px;border-radius:999px;font-size:.85rem;font-weight:600;margin-bottom:26px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+  h1{font-size:clamp(2.4rem,6vw,4.2rem);font-weight:900;letter-spacing:-.02em;line-height:1.05;margin-bottom:20px}
+  h1 .grad{background:linear-gradient(120deg,var(--primary),var(--green));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .lead{font-size:clamp(1.05rem,2.5vw,1.3rem);color:var(--muted);max-width:680px;margin:0 auto 36px}
+  .hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:44px}
+  .chips{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .chip{background:var(--surface);border:1px solid var(--border);padding:8px 14px;border-radius:8px;font-size:.82rem;font-weight:500;color:var(--muted);font-family:'JetBrains Mono',monospace}
+  .chip b{color:var(--text)}
+
+  /* section */
+  section{padding:70px 0;border-top:1px solid var(--border)}
+  .eyebrow{color:var(--primary);font-weight:700;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;text-align:center;margin-bottom:12px}
+  h2{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:800;text-align:center;letter-spacing:-.02em;margin-bottom:14px}
+  .sub{color:var(--muted);text-align:center;max-width:620px;margin:0 auto 48px}
+
+  /* feature grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:26px;transition:transform .2s,border-color .2s}
+  .card:hover{transform:translateY(-4px);border-color:rgba(0,201,167,.4)}
+  .card .ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:16px;background:var(--surface2)}
+  .card h3{font-size:1.15rem;font-weight:700;margin-bottom:8px}
+  .card p{color:var(--muted);font-size:.95rem}
+
+  /* stat row */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:18px;margin-top:10px}
+  .stat{background:linear-gradient(160deg,var(--surface),var(--bg2));border:1px solid var(--border);border-radius:16px;padding:28px 20px;text-align:center}
+  .stat .num{font-size:2.4rem;font-weight:900;background:linear-gradient(120deg,var(--primary),var(--green));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .stat .lbl{color:var(--muted);font-size:.9rem;margin-top:4px}
+
+  /* pipeline */
+  .pipe{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:30px;font-family:'JetBrains Mono',monospace;font-size:.9rem;overflow-x:auto}
+  .pipe .step{display:flex;align-items:center;gap:14px;padding:10px 0;color:var(--muted)}
+  .pipe .step b{color:var(--text)}
+  .pipe .arrow{color:var(--primary);font-weight:700}
+  .tag{display:inline-block;padding:3px 10px;border-radius:6px;font-size:.75rem;font-weight:600;font-family:'Inter',sans-serif}
+  .tag.g{background:rgba(0,217,126,.15);color:var(--green)} .tag.r{background:rgba(255,59,48,.15);color:var(--red)} .tag.o{background:rgba(255,107,0,.15);color:var(--orange)} .tag.a{background:rgba(255,179,0,.15);color:var(--amber)}
+
+  /* screenshots */
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:22px;margin-top:40px}
+  .shots figure{margin:0;text-align:center}
+  .shots img{width:100%;height:auto;display:block;border-radius:14px;border:1px solid var(--border);background:var(--surface)}
+  .shots figcaption{color:var(--muted);font-size:.85rem;margin-top:10px}
+
+  /* privacy */
+  .privacy{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+  .plock{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--primary);border-radius:12px;padding:22px}
+  .plock h4{font-size:1rem;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  .plock p{color:var(--muted);font-size:.9rem}
+  .perm{display:inline-flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:24px}
+  .perm code{background:var(--surface2);color:var(--green);padding:8px 16px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:.85rem;border:1px solid var(--border)}
+
+  /* tech */
+  .tech{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+  .tech span{background:var(--surface);border:1px solid var(--border);padding:10px 18px;border-radius:10px;font-weight:500;font-size:.9rem}
+
+  /* timeline */
+  .timeline{max-width:760px;margin:0 auto}
+  .tl{display:flex;gap:20px;padding:16px 0;border-bottom:1px solid var(--border)}
+  .tl:last-child{border-bottom:none}
+  .tl .ph{flex-shrink:0;width:52px;height:52px;border-radius:12px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--primary)}
+  .tl h4{font-size:1.05rem;margin-bottom:2px}
+  .tl p{color:var(--muted);font-size:.92rem}
+
+  /* footer */
+  footer{padding:60px 0 40px;border-top:1px solid var(--border);text-align:center}
+  footer .name{font-weight:800;font-size:1.3rem;margin-bottom:6px}
+  footer .role{color:var(--muted);margin-bottom:20px}
+  .social{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:28px}
+  .foot-note{color:var(--muted);font-size:.85rem}
+  .cta-band{background:linear-gradient(120deg,rgba(0,201,167,.12),rgba(0,217,126,.06));border:1px solid rgba(0,201,167,.25);border-radius:20px;padding:44px;text-align:center;margin-top:20px}
+  .cta-band h2{margin-bottom:12px}
+  .cta-band p{color:var(--muted);margin-bottom:26px}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="brand">🛡️ Secure<span>Vision</span></div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#preview">Screenshots</a>
+      <a href="#pipeline">AI Pipeline</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#tech">Tech</a>
+      <a href="#journey">Journey</a>
+    </div>
+    <!-- REPLACE with your repo URL if different -->
+    <a class="btn btn-primary" href="https://github.com/muhammad-hameed-ai/securevision" target="_blank">⭐ GitHub</a>
+  </div>
+</nav>
+
+<header>
+  <div class="wrap">
+    <div class="badge-pill"><span class="dot"></span> 100% On-Device · Offline · Private</div>
+    <h1>Intelligent security<br/>that never leaves <span class="grad">your phone</span></h1>
+    <p class="lead">SecureVision turns any Android phone into a self-contained AI security camera — recognising faces, detecting weapons, and sensing motion, entirely on-device. No cloud. No account server. No internet.</p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="https://github.com/muhammad-hameed-ai/securevision" target="_blank">View on GitHub →</a>
+      <a class="btn btn-ghost" href="#features">Explore features</a>
+    </div>
+    <div class="chips">
+      <div class="chip"><b>Kotlin</b> 2.0</div>
+      <div class="chip"><b>Jetpack</b> Compose</div>
+      <div class="chip"><b>TensorFlow</b> Lite</div>
+      <div class="chip"><b>397</b> tests</div>
+      <div class="chip"><b>3</b> permissions</div>
+    </div>
+  </div>
+</header>
+
+<section id="preview">
+  <div class="wrap">
+    <p class="eyebrow">See it live</p>
+    <h2>One camera. Many eyes.</h2>
+    <p class="sub">Captured on a physical Android device.</p>
+    <div class="shots">
+      <figure><img src="screenshots/hero_face_and_weapon.jpeg" alt="A recognised face and a detected weapon in the same frame" loading="lazy"/><figcaption>Face + weapon, same frame</figcaption></figure>
+      <figure><img src="screenshots/live_detection.jpeg" alt="Live camera view with a face bounding box" loading="lazy"/><figcaption>Live detection</figcaption></figure>
+      <figure><img src="screenshots/dashboard.jpeg" alt="Dashboard showing summary statistics" loading="lazy"/><figcaption>Dashboard</figcaption></figure>
+      <figure><img src="screenshots/alerts.jpeg" alt="Alert history with snapshot thumbnails" loading="lazy"/><figcaption>Alert history</figcaption></figure>
+      <figure><img src="screenshots/profiles.jpeg" alt="List of enrolled people" loading="lazy"/><figcaption>Enrolled people</figcaption></figure>
+      <figure><img src="screenshots/recordings.jpeg" alt="Recordings gallery" loading="lazy"/><figcaption>Recordings</figcaption></figure>
+      <figure><img src="screenshots/settings.jpeg" alt="Settings screen" loading="lazy"/><figcaption>Settings</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <p class="eyebrow">Capabilities</p>
+    <h2>Everything a security system needs</h2>
+    <p class="sub">Multiple AI models run together in real time on the device's camera feed.</p>
+    <div class="grid">
+      <div class="card"><div class="ico">🟢</div><h3>Face Recognition</h3><p>Recognises enrolled people by name with a live confidence score, using FaceNet-512 embeddings and mandatory 5-point facial alignment.</p></div>
+      <div class="card"><div class="ico">🟠</div><h3>Weapon Detection</h3><p>A YOLOv8 model — trained from scratch on a public weapons dataset — flags weapons in frame and raises a critical alarm.</p></div>
+      <div class="card"><div class="ico">🔴</div><h3>Unknown Alerts</h3><p>Any unenrolled face is flagged, logged, and alarmed, with an automatically captured snapshot attached to the alert.</p></div>
+      <div class="card"><div class="ico">🟡</div><h3>Motion Sensing</h3><p>Frame-differencing motion detection with intensity metering and smart debouncing to avoid alert storms.</p></div>
+      <div class="card"><div class="ico">🔔</div><h3>Graded Alarms</h3><p>Two-tier alarm engine — a weapon alarm has strict priority and can never be silenced by a lesser alert.</p></div>
+      <div class="card"><div class="ico">🎥</div><h3>Recording & Torch</h3><p>Record the live feed to internal storage with an in-app gallery, plus an on-device flashlight for low-light monitoring.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="stats">
+      <div class="stat"><div class="num">98%</div><div class="lbl">On-device recognition</div></div>
+      <div class="stat"><div class="num">397</div><div class="lbl">Automated tests</div></div>
+      <div class="stat"><div class="num">3</div><div class="lbl">Permissions only</div></div>
+      <div class="stat"><div class="num">0</div><div class="lbl">Cloud dependencies</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="pipeline">
+  <div class="wrap">
+    <p class="eyebrow">Under the hood</p>
+    <h2>The recognition pipeline</h2>
+    <p class="sub">Accuracy comes from a strict, ordered pipeline. The alignment stage is mandatory — an early prototype failed precisely because it skipped it.</p>
+    <div class="pipe">
+      <div class="step"><span class="arrow">▶</span> <b>Face Detection</b> — ML Kit finds faces + 5 landmarks</div>
+      <div class="step"><span class="arrow">▶</span> <b>Quality Gate</b> — rejects too-small / too-tilted faces</div>
+      <div class="step"><span class="arrow">▶</span> <b>Alignment</b> — warps the face to a canonical 160×160 crop <span class="tag a">mandatory</span></div>
+      <div class="step"><span class="arrow">▶</span> <b>FaceNet-512</b> — produces a 512-dimension embedding</div>
+      <div class="step"><span class="arrow">▶</span> <b>Cosine Matching</b> — compares against enrolled faces with a margin</div>
+      <div class="step"><span class="arrow">▶</span> <b>Multi-Frame Voting</b> — 3-of-4 frames agree for a stable verdict</div>
+      <div class="step" style="padding-top:16px;border-top:1px solid var(--border);margin-top:8px">Result: <span class="tag g">KNOWN + name</span> <span class="tag r">UNKNOWN</span> <span class="tag a">identifying…</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="privacy">
+  <div class="wrap">
+    <p class="eyebrow">By design</p>
+    <h2>Privacy is structural, not a setting</h2>
+    <p class="sub">The app is engineered so that sensitive data physically cannot leave the device.</p>
+    <div class="privacy">
+      <div class="plock"><h4>🚫 No network capability</h4><p>The INTERNET permission is deliberately absent — the app is <em>incapable</em> of transmitting data, not merely promising not to.</p></div>
+      <div class="plock"><h4>🧬 Biometrics stay local</h4><p>Face embeddings live only in the on-device database and never leave the phone.</p></div>
+      <div class="plock"><h4>🔑 Hashed credentials</h4><p>Operator passwords are stored as BCrypt hashes (cost 12), never plaintext, with a hashed one-time recovery code.</p></div>
+      <div class="plock"><h4>🛡️ Backups disabled</h4><p>Private app data is excluded from device backup to protect biometric information.</p></div>
+    </div>
+    <div class="perm">
+      <code>CAMERA</code><code>VIBRATE</code><code>POST_NOTIFICATIONS</code>
+    </div>
+    <p class="sub" style="margin-top:16px">…and nothing else. No network, storage, or device-identity permissions.</p>
+  </div>
+</section>
+
+<section id="tech">
+  <div class="wrap">
+    <p class="eyebrow">Built with</p>
+    <h2>A production-grade stack</h2>
+    <p class="sub">Multi-module clean architecture with six compile-enforced boundaries.</p>
+    <div class="tech">
+      <span>Kotlin 2.0</span><span>Jetpack Compose</span><span>Material 3</span><span>Clean Architecture</span>
+      <span>MVVM</span><span>Hilt</span><span>Coroutines · Flow</span><span>CameraX</span>
+      <span>ML Kit</span><span>TensorFlow Lite</span><span>FaceNet-512</span><span>YOLOv8</span>
+      <span>Room</span><span>DataStore</span><span>Media3</span><span>JUnit · Turbine</span>
+    </div>
+  </div>
+</section>
+
+<section id="journey">
+  <div class="wrap">
+    <p class="eyebrow">How it was built</p>
+    <h2>Seven disciplined phases</h2>
+    <p class="sub">Each phase committed and verified on physical hardware before the next began.</p>
+    <div class="timeline">
+      <div class="tl"><div class="ph">1</div><div><h4>Foundation</h4><p>Multi-module architecture, domain model, design system, navigation shell.</p></div></div>
+      <div class="tl"><div class="ph">2</div><div><h4>Data Layer</h4><p>Room database, DataStore settings, internal file storage, live dashboard.</p></div></div>
+      <div class="tl"><div class="ph">3</div><div><h4>Authentication</h4><p>Offline operator login with BCrypt hashing and a one-time recovery code.</p></div></div>
+      <div class="tl"><div class="ph">4</div><div><h4>Face Recognition</h4><p>Live camera recognition with mandatory alignment — 98% accuracy on-device.</p></div></div>
+      <div class="tl"><div class="ph">5</div><div><h4>Alarms & Snapshots</h4><p>Motion, attributes, snapshot capture, dual-level alarm engine, notifications.</p></div></div>
+      <div class="tl"><div class="ph">6</div><div><h4>Galleries</h4><p>Polished profiles, alerts with snapshots, and a recordings gallery.</p></div></div>
+      <div class="tl"><div class="ph">7</div><div><h4>Weapons & Polish</h4><p>Custom weapon detection, full settings, performance tuning, release.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="cta-band">
+      <h2>Explore the code</h2>
+      <p>Full source, architecture docs, and the seven-phase build history — all on GitHub.</p>
+      <a class="btn btn-primary" href="https://github.com/muhammad-hameed-ai/securevision" target="_blank">⭐ Star on GitHub</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="name">Muhammad Hameed</div>
+    <div class="role">Software Engineering · CECOS University of IT &amp; Emerging Sciences, Peshawar<br/>Mobile Application Development — Instructor: Kashif Aman</div>
+    <div class="social">
+      <a class="btn btn-ghost" href="https://github.com/muhammad-hameed-ai" target="_blank">GitHub</a>
+      <a class="btn btn-ghost" href="https://www.linkedin.com/in/muhammad-hameed-4803ba2b2" target="_blank" rel="noopener">LinkedIn</a>
+      <a class="btn btn-ghost" href="mailto:eng.hameed2943@gmail.com">Email</a>
+    </div>
+    <p class="foot-note">SecureVision — intelligent security that respects privacy. Built entirely on-device. © 2026 Muhammad Hameed.</p>
+  </div>
+</footer>
+
+</body>
+</html>
