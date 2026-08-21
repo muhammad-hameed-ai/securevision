@@ -193,7 +193,7 @@ Drop any of those files into `ml/ml-attributes/src/main/assets/` and the loader 
 
 ## 🏗 Architecture
 
-Clean Architecture + MVVM across **21 Gradle modules**, wired by convention plugins in `build-logic/`. Dependencies point inward only: presentation never reaches the data layer directly.
+Clean Architecture + MVVM across **20 Gradle modules**, wired by convention plugins in a `build-logic/` composite build. Dependencies point inward only: presentation never reaches the data layer directly.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
