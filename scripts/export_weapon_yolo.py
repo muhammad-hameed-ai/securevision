@@ -73,7 +73,7 @@ def main() -> int:
         "\nNote: ultralytics may emit NHWC [1,640,640,3] rather than NCHW\n"
         "[1,3,640,640]. Both are fine -- the app inspects the input tensor at\n"
         "load and feeds it in whichever layout the model declares.\n"
-        "Verify with:  adb logcat -s WeaponModel:V"
+        "Verify with:  adb logcat -s WeaponDetector:V"
     )
     return 0
 

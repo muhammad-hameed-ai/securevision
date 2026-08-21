@@ -82,7 +82,7 @@ def main() -> int:
 
     size_mb = len(tflite_bytes) / (1024 * 1024)
     print(f"\nWrote {args.out}  ({size_mb:.1f} MB)")
-    print("Verify on device with:  adb logcat -s FaceModel:V")
+    print("Verify on device with:  adb logcat -s FaceEmbedder:V")
     return 0
 
 

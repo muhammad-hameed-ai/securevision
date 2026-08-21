@@ -327,7 +327,7 @@ ml/ml-weapon/src/main/assets/weapon_detector.tflite
 #### Confirming a rebuild
 
 ```bash
-adb logcat -s FaceModel:V WeaponModel:V
+adb logcat -s FaceEmbedder:V WeaponDetector:V
 ```
 
 Both engines log their resolved input and output shapes on load. A shape mismatch is rejected with an explanatory message rather than degrading recognition silently.
@@ -424,7 +424,7 @@ python scripts/export_weapon_yolo.py --data path/to/data.yaml
 Confirm what loaded:
 
 ```bash
-adb logcat -s FaceModel:V WeaponModel:V AttributeAnalyzer:I
+adb logcat -s FaceEmbedder:V WeaponDetector:V AttributeAnalyzer:I
 ```
 
 ### 3. Build and install
@@ -532,11 +532,14 @@ Stated plainly, because a security tool that overstates itself is worse than one
 - [ ] Multi-photo enrolment (average embeddings)
 - [ ] Liveness / anti-spoofing
 - [ ] Attribute models (age, gender, beard, mask)
-- [ ] Signed release build + CI
+- [x] CI — tests, lint and debug assemble on every push and PR
+- [ ] Signed release build
 
 ---
 
 ## 🤝 Contributing
+
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for setup, workflow, the architecture boundaries, and how to report a bug or a vulnerability.
 
 ```bash
 git checkout -b feature/your-feature-name
@@ -545,7 +548,7 @@ git push origin feature/your-feature-name
 # then open a Pull Request against main
 ```
 
-### House rules
+The short version — each of these is enforced in review:
 
 - [Kotlin coding conventions](https://kotlinlang.org/docs/coding-conventions.html).
 - New behaviour ships with unit tests; `./gradlew test lint` must stay green.
@@ -554,6 +557,7 @@ git push origin feature/your-feature-name
 - KDoc on public APIs.
 - Respect the module boundaries: presentation must not depend on `core-data`.
 - Never commit `.tflite`, `.pt`, keystores, or `local.properties`.
+- A database change needs a tested migration — there is no destructive fallback.
 
 ---
 
