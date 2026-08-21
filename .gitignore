@@ -40,9 +40,19 @@ google-services.json
 *.tflite
 *.tflite.bak
 
-# PyTorch checkpoints. Nothing here produces one today, but a YOLO export starts
-# life as a .pt and those run to hundreds of megabytes — cheaper to exclude now
-# than to scrub from history later.
+# PyTorch checkpoints. The weapon export in scripts/ starts life as a .pt and
+# those run to hundreds of megabytes — cheaper to exclude now than to scrub
+# from history later.
 *.pt
 *.pth
 *.onnx
+
+# --- Python (scripts/) ------------------------------------------------------
+# Byte-code and virtualenvs from running the model-export scripts.
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Ultralytics writes training runs here: weights, plots and epoch checkpoints.
+runs/

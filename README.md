@@ -268,6 +268,70 @@ Both `.tflite` files are **excluded from the repository** (see [`.gitignore`](.g
 
 The detector is single-class by design: it reports *that* a weapon is present, and cannot distinguish a pistol from a knife.
 
+### Regenerating the models
+
+Neither `.tflite` is committed, so both are reproducible from scratch. Runnable versions of everything below live in [`scripts/`](scripts/).
+
+#### Face — FaceNet-512 via deepface
+
+```bash
+pip install deepface tensorflow
+
+python -c "from deepface import DeepFace; import tensorflow as tf; \
+m=DeepFace.build_model('Facenet512'); \
+c=tf.lite.TFLiteConverter.from_keras_model(m.model); \
+open('facenet_512.tflite','wb').write(c.convert())"
+```
+
+Then place the result at:
+
+```
+ml/ml-face/src/main/assets/facenet_512.tflite
+```
+
+Or run the script, which writes straight to that path and refuses to export a model whose output is not `[1, 512]`:
+
+```bash
+python scripts/export_facenet.py
+```
+
+> The first run downloads the FaceNet weights (~90 MB) before converting. `DeepFace.build_model` returns the Keras model directly in older releases and a wrapper exposing `.model` in newer ones — the one-liner above assumes the wrapper; [`scripts/export_facenet.py`](scripts/export_facenet.py) handles both.
+
+#### Weapon — YOLOv8, single class
+
+Trained with [Ultralytics YOLOv8](https://github.com/ultralytics/ultralytics) on the Kaggle dataset [`alinoorqureshi/weapon-detection-yolo-optimized`](https://www.kaggle.com/datasets/alinoorqureshi/weapon-detection-yolo-optimized) — one class, `Weapon` — reaching **mAP@50 ≈ 0.80**, then exported to TFLite.
+
+```bash
+pip install ultralytics
+
+# download and unzip the dataset, then:
+python scripts/export_weapon_yolo.py --data path/to/data.yaml --epochs 100
+
+# or export weights you already have:
+python scripts/export_weapon_yolo.py --weights runs/detect/train/weights/best.pt
+```
+
+Place the result at:
+
+```
+ml/ml-weapon/src/main/assets/weapon_detector.tflite
+```
+
+| | |
+|---|---|
+| Input | `[1, 3, 640, 640]` NCHW (NHWC also accepted) |
+| Output | `[1, 5, 8400]` channels-major |
+
+> Ultralytics often exports **NHWC** `[1, 640, 640, 3]` rather than NCHW. Either works: [`WeaponDetector`](ml/ml-weapon/src/main/kotlin/com/securevision/ml/weapon/detect/WeaponDetector.kt) reads the input tensor at load, sets `inputIsChannelsFirst`, and writes the pixel buffer in the matching layout. Getting this wrong silently produces garbage detections, so the resolved layout is logged at startup.
+
+#### Confirming a rebuild
+
+```bash
+adb logcat -s FaceModel:V WeaponModel:V
+```
+
+Both engines log their resolved input and output shapes on load. A shape mismatch is rejected with an explanatory message rather than degrading recognition silently.
+
 ### Delegate strategy
 
 TFLite tries **GPU → NNAPI → CPU** and uses the first that initialises. Models are packaged `STORED` (uncompressed) so they can be memory-mapped rather than copied to the heap.
@@ -348,6 +412,14 @@ ml/ml-weapon/src/main/assets/weapon_detector.tflite
 **Face model** — any FaceNet TFLite export matching the contract above: input `[1, 160, 160, 3]`, output `[1, 512]`. A mismatched shape is rejected at load with an explanatory log rather than producing silent garbage.
 
 **Weapon model** — a single-class YOLOv8 detector exported to TFLite at `[1, 3, 640, 640]` in, `[1, 5, 8400]` out.
+
+Don't have them? Build both from scratch — see [Regenerating the models](#regenerating-the-models), or just run:
+
+```bash
+pip install deepface tensorflow ultralytics
+python scripts/export_facenet.py
+python scripts/export_weapon_yolo.py --data path/to/data.yaml
+```
 
 Confirm what loaded:
 
